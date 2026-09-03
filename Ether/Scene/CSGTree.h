@@ -32,6 +32,8 @@ struct CSGNode
 
 	PrimitiveData Data{};
 
+	s32 MaterialIndex = -1;
+
 	Vector3 LocalPosition;
 
 	Quaternion LocalRotation = Quaternion::Identity;
@@ -45,6 +47,7 @@ class CSGTree
 public:
 	f32 Distance(const Vector3& localPoint) const;
 	Vector3 Normal(const Vector3& localPoint) const;
+	s32 MaterialIndex(const Vector3& localPoint) const;
 
 	const AABB& LocalBounds() const { return _nodes[_rootIndex].LocalBounds; }
 
@@ -68,10 +71,10 @@ private:
 class CSGTreeBuilder
 {
 public:
-	s32 AddSphere(const Vector3& localPosition, f32 radius, f32 localScale = 1.0f);
-	s32 AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale = 1.0f);
-	s32 AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale = 1.0f);
-	s32 AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale = 1.0f);
+	s32 AddSphere(const Vector3& localPosition, f32 radius, f32 localScale = 1.0f, s32 materialIndex = -1);
+	s32 AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale = 1.0f, s32 materialIndex = -1);
+	s32 AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale = 1.0f, s32 materialIndex = -1);
+	s32 AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale = 1.0f, s32 materialIndex = -1);
 
 	s32 Union(s32 left, s32 right);
 	s32 Subtraction(s32 left, s32 right);
@@ -84,7 +87,7 @@ public:
 
 private:
 	s32 AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc normalFunc, const PrimitiveData& data,
-					  const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds);
+					 const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds, s32 materialIndex);
 	s32 AddOp(CSGOperation operation, s32 left, s32 right, f32 smoothing);
 
 	std::vector<CSGNode> _nodes;

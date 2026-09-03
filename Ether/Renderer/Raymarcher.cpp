@@ -1,5 +1,7 @@
 #include "Raymarcher.h"
 #include "../Platform/ThreadPool.h"
+#include "../Scene/Material.h"
+#include "../Scene/MaterialLibrary.h"
 
 #include <algorithm>
 #include <array>
@@ -8,12 +10,12 @@
 
 namespace
 {
-	constexpr s32 MaxSteps         = 512;
-	constexpr f32 MinHitDistance   = 0.0001f;
-	constexpr f32 MaxTraceDistance = 100.0f;
-	constexpr usize GammaTableSize = 4096;
-
-	const Vector3 LightDirection = Vector3(-0.5f, 1.0f, -0.3f).Normalized();
+	constexpr s32 MaxSteps            = 512;
+	constexpr f32 MinHitDistance      = 0.0001f;
+	constexpr f32 MaxTraceDistance    = 100.0f;
+	constexpr s32 MaxBounces          = 4;
+	constexpr f32 MinBounceThroughput = 0.02f;
+	constexpr usize GammaTableSize    = 4096;
 
 	u32 PackColor(const Vector3& color)
 	{
@@ -40,19 +42,10 @@ namespace
 
 		return (255u << 24) | (b << 16) | (g << 8) | r;
 	}
-
-	Vector3 Shade(const BVH& bvh, s32 objectIndex, const Vector3& hitPoint)
-	{
-		Vector3 normal = bvh.GetObject(objectIndex).Normal(hitPoint);
-		f32 diffuse    = std::max(normal.Dot(LightDirection), 0.0f);
-		f32 intensity  = std::min(0.15f + diffuse, 1.0f);
-
-		return Vector3(intensity);
-	}
 }
 
-Raymarcher::Raymarcher(Camera& camera, const BVH& bvh, u32 width, u32 height)
-	: _camera(camera), _bvh(bvh), _width(width), _height(height)
+Raymarcher::Raymarcher(Camera& camera, const BVH& bvh, const Lighting& lighting, u32 width, u32 height)
+	: _camera(camera), _bvh(bvh), _lighting(lighting), _width(width), _height(height)
 {
 }
 
@@ -66,11 +59,12 @@ MarchResult Raymarcher::Raymarch(const Ray& ray) const
 		s32 object;
 		Vector3 point = ray.At(traveled);
 		f32 distance  = _bvh.Distance(point, object);
+		f32 stepSize  = std::fabs(distance);
 
-		if (distance < MinHitDistance)
+		if (stepSize < MinHitDistance)
 			return { true, traveled, object, point };
 
-		traveled += distance;
+		traveled += stepSize;
 		if (traveled > MaxTraceDistance)
 			break;
 	}
@@ -78,14 +72,66 @@ MarchResult Raymarcher::Raymarch(const Ray& ray) const
 	return { false, traveled, -1, Vector3::Zero };
 }
 
-Vector3 Raymarcher::Trace(const Ray& ray) const
+Vector3 Raymarcher::Trace(const Ray& ray, s32 depth) const
 {
-	MarchResult result = Raymarcher::Raymarch(ray);
-
-	if (result.Hit)
-		return Shade(_bvh, result.ObjectIndex, result.Point);
-	else
+	MarchResult hit = Raymarch(ray);
+	if (!hit.Hit)
 		return BackgroundColor;
+
+	const SceneObject& object = _bvh.GetObject(hit.ObjectIndex);
+	Vector3 normal		      = object.Normal(hit.Point);
+	s32 materialIndex	      = object.ResolveMaterialIndex(hit.Point);
+	const Material& material  = GetMaterialLibrary().Get(materialIndex);
+	MaterialSample surface    = material.Evaluate(hit.Point, normal);
+
+	Vector3 viewDir = -ray.Direction;
+	SurfacePoint surfacePoint{ hit.Point, surface.Normal, surface.Albedo, surface.Roughness, surface.Metallic, surface.Emission };
+	Vector3 shaded = _lighting.Shade(_bvh, surfacePoint, viewDir);
+
+	Vector3 f0		    = Vector3(0.04f) * (1.0f - surface.Metallic) + surface.Albedo * surface.Metallic;
+	f32 nDotV		    = std::max(surface.Normal.Dot(viewDir), 0.0f);
+	Vector3 fresnel	    = f0 + (Vector3(1.0f) - f0) * std::pow(1.0f - nDotV, 5.0f);
+	f32 smoothness	    = 1.0f - std::clamp(surface.Roughness, 0.0f, 1.0f);
+	Vector3 reflectance = fresnel * (smoothness * smoothness);
+
+	Vector3 result = shaded * (Vector3(1.0f) - reflectance) * (1.0f - surface.Transmission);
+
+	if (depth >= MaxBounces)
+		return result;
+
+	if (surface.Transmission > 0.0f)
+	{
+		f32 cosI	   = std::clamp(surface.Normal.Dot(viewDir), -1.0f, 1.0f);
+		bool entering  = cosI > 0.0f;
+		f32 eta		   = entering ? (1.0f / surface.IOR) : surface.IOR;
+		Vector3 n	   = entering ? surface.Normal : -surface.Normal;
+		f32 cosThetaI  = entering ? cosI : -cosI;
+		f32 sin2ThetaT = eta * eta * (1.0f - cosThetaI * cosThetaI);
+
+		if (sin2ThetaT >= 1.0f)
+		{
+			Vector3 reflectDir = ray.Direction - n * (2.0f * ray.Direction.Dot(n));
+			Ray reflectRay(hit.Point + n * (MinHitDistance * 2.0f), reflectDir);
+			result += Trace(reflectRay, depth + 1) * surface.Transmission;
+		}
+		else
+		{
+			f32 cosThetaT      = std::sqrt(1.0f - sin2ThetaT);
+			Vector3 refractDir = (ray.Direction * eta + n * (eta * cosThetaI - cosThetaT)).Normalized();
+			Ray refractRay(hit.Point - n * (MinHitDistance * 2.0f), refractDir);
+			result += Trace(refractRay, depth + 1) * surface.Transmission;
+		}
+	}
+
+	f32 reflectMagnitude = std::max({ reflectance.X, reflectance.Y, reflectance.Z });
+	if (reflectMagnitude > MinBounceThroughput)
+	{
+		Vector3 reflectDir = ray.Direction - surface.Normal * (2.0f * ray.Direction.Dot(surface.Normal));
+		Ray reflectRay(hit.Point + surface.Normal * (MinHitDistance * 2.0f), reflectDir);
+		result += Trace(reflectRay, depth + 1) * reflectance;
+	}
+
+	return result;
 }
 
 void Raymarcher::Render(u32* framebuffer) const

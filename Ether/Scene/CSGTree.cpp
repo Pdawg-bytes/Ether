@@ -38,6 +38,12 @@ f32 CSGTree::Distance(const Vector3& localPoint) const
 	return EvaluateNode(_rootIndex, localPoint).Distance;
 }
 
+s32 CSGTree::MaterialIndex(const Vector3& localPoint) const
+{
+	CSGEval eval = EvaluateNode(_rootIndex, localPoint);
+	return eval.LeafIndex >= 0 ? _nodes[eval.LeafIndex].MaterialIndex : -1;
+}
+
 Vector3 CSGTree::Normal(const Vector3& localPoint) const
 {
 	CSGEval eval = EvaluateNode(_rootIndex, localPoint);
@@ -130,20 +136,31 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 
 		case CSGOperation::SmoothUnion:
 		{
-			f32 h = std::clamp(0.5f + 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
-			return { Math::Lerp(b.Distance, a.Distance, h) - k * h * (1.0f - h), -1, false, true };
+			f32 h	     = std::clamp(0.5f + 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
+			f32 distance = Math::Lerp(b.Distance, a.Distance, h) - k * h * (1.0f - h);
+
+			const CSGEval& nearest = a.Distance <= b.Distance ? a : b;
+
+			return { distance, nearest.LeafIndex, nearest.Negated, true };
 		}
 
 		case CSGOperation::SmoothSubtraction:
 		{
-			f32 h = std::clamp(0.5f - 0.5f * (a.Distance + b.Distance) / k, 0.0f, 1.0f);
-			return { Math::Lerp(a.Distance, -b.Distance, h) + k * h * (1.0f - h), -1, false, true };
+			f32 h	     = std::clamp(0.5f - 0.5f * (a.Distance + b.Distance) / k, 0.0f, 1.0f);
+			f32 distance = Math::Lerp(a.Distance, -b.Distance, h) + k * h * (1.0f - h);
+			bool useB    = a.Distance < -b.Distance;
+
+			return { distance, useB ? b.LeafIndex : a.LeafIndex, useB ? !b.Negated : a.Negated, true };
 		}
 
 		case CSGOperation::SmoothIntersection:
 		{
-			f32 h = std::clamp(0.5f - 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
-			return { Math::Lerp(b.Distance, a.Distance, h) + k * h * (1.0f - h), -1, false, true };
+			f32 h	     = std::clamp(0.5f - 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
+			f32 distance = Math::Lerp(b.Distance, a.Distance, h) + k * h * (1.0f - h);
+
+			const CSGEval& nearest = a.Distance >= b.Distance ? a : b;
+
+			return { distance, nearest.LeafIndex, nearest.Negated, true };
 		}
 
 		default:
@@ -152,13 +169,14 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 }
 
 s32 CSGTreeBuilder::AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc normalFunc, const PrimitiveData& data,
-								  const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds)
+								  const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds, s32 materialIndex)
 {
 	CSGNode node;
 	node.Operation	   = CSGOperation::Primitive;
 	node.DistanceFunc  = distanceFunc;
 	node.NormalFunc	   = normalFunc;
 	node.Data		   = data;
+	node.MaterialIndex = materialIndex;
 	node.LocalPosition = localPosition;
 	node.LocalRotation = localRotation;
 	node.LocalScale	   = localScale;
@@ -168,25 +186,25 @@ s32 CSGTreeBuilder::AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc nor
 	return (s32)_nodes.size() - 1;
 }
 
-s32 CSGTreeBuilder::AddSphere(const Vector3& localPosition, f32 radius, f32 localScale)
+s32 CSGTreeBuilder::AddSphere(const Vector3& localPosition, f32 radius, f32 localScale, s32 materialIndex)
 {
 	PrimitiveData data{};
 	data.Sphere.Radius = radius;
 
 	AABB shapeBounds(Vector3(-radius), Vector3(radius));
-	return AddPrimitive(SDF::SphereDistance, SDF::SphereNormal, data, localPosition, Quaternion::Identity, localScale, shapeBounds);
+	return AddPrimitive(SDF::SphereDistance, SDF::SphereNormal, data, localPosition, Quaternion::Identity, localScale, shapeBounds, materialIndex);
 }
 
-s32 CSGTreeBuilder::AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale)
+s32 CSGTreeBuilder::AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale, s32 materialIndex)
 {
 	PrimitiveData data{};
 	data.Box.Extents = extents;
 
 	AABB shapeBounds(-extents, extents);
-	return AddPrimitive(SDF::BoxDistance, SDF::BoxNormal, data, localPosition, localRotation, localScale, shapeBounds);
+	return AddPrimitive(SDF::BoxDistance, SDF::BoxNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
 }
 
-s32 CSGTreeBuilder::AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale)
+s32 CSGTreeBuilder::AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale, s32 materialIndex)
 {
 	PrimitiveData data{};
 	data.Torus.MajorRadius = majorRadius;
@@ -194,17 +212,17 @@ s32 CSGTreeBuilder::AddTorus(const Vector3& localPosition, const Quaternion& loc
 
 	f32 outerRadius = majorRadius + minorRadius;
 	AABB shapeBounds(Vector3(-outerRadius, -minorRadius, -outerRadius), Vector3(outerRadius, minorRadius, outerRadius));
-	return AddPrimitive(SDF::TorusDistance, SDF::TorusNormal, data, localPosition, localRotation, localScale, shapeBounds);
+	return AddPrimitive(SDF::TorusDistance, SDF::TorusNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
 }
 
-s32 CSGTreeBuilder::AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale)
+s32 CSGTreeBuilder::AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale, s32 materialIndex)
 {
 	PrimitiveData data{};
 	data.Cylinder.Radius	 = radius;
 	data.Cylinder.HalfHeight = halfHeight;
 
 	AABB shapeBounds(Vector3(-radius, -halfHeight, -radius), Vector3(radius, halfHeight, radius));
-	return AddPrimitive(SDF::CylinderDistance, SDF::CylinderNormal, data, localPosition, localRotation, localScale, shapeBounds);
+	return AddPrimitive(SDF::CylinderDistance, SDF::CylinderNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
 }
 
 s32 CSGTreeBuilder::AddOp(CSGOperation operation, s32 left, s32 right, f32 smoothing)

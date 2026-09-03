@@ -1,9 +1,10 @@
 #pragma once
 
 #include "Camera.h"
+#include "Lighting.h"
 #include "../Scene/BVH.h"
 
-//#define MULTI_THREADED_RENDERING
+#define MULTI_THREADED_RENDERING
 
 struct MarchResult
 {
@@ -17,15 +18,16 @@ class Raymarcher
 {
 public:
 
-	Raymarcher(Camera& camera, const BVH& bvh, u32 width, u32 height);
+	Raymarcher(Camera& camera, const BVH& bvh, const Lighting& lighting, u32 width, u32 height);
 
 	MarchResult Raymarch(const Ray& ray) const;
-	Vector3 Trace(const Ray& ray) const;
+	Vector3 Trace(const Ray& ray, s32 depth = 0) const;
 	void Render(u32* framebuffer) const;
 
 private:
 	Camera& _camera;
 	const BVH& _bvh;
+	const Lighting& _lighting;
 	u32 _width;
 	u32 _height;
 

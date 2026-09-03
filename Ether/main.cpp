@@ -1,9 +1,13 @@
 #include "Platform/Window.h"
 #include "Renderer/Camera.h"
 #include "Renderer/Raymarcher.h"
+#include "Renderer/Lighting.h"
 #include "Scene/BVH.h"
 #include "Scene/SceneObject.h"
 #include "Scene/CSGTree.h"
+#include "Scene/Material.h"
+#include "Scene/MaterialLibrary.h"
+#include "Scene/Texture.h"
 #include "Math/MathUtil.h"
 
 #include <algorithm>
@@ -19,6 +23,57 @@ namespace
 	constexpr u32 Height		   = 120;
 	constexpr f32 MoveSpeed		   = 3.5f;
 	constexpr f32 MouseSensitivity = 0.15f;
+
+	struct SceneMaterials
+	{
+		s32 Checker;
+		s32 Metal;
+		s32 Glass;
+		s32 Emissive;
+		s32 Mirror;
+	};
+
+	SceneMaterials RegisterMaterials()
+	{
+		std::shared_ptr<Texture> checkerTexture = Texture::CreateCheckerboard(64, 64, 8, Vector3(0.9f), Vector3(0.08f));
+
+		Material checker;
+		checker.AlbedoMap    = checkerTexture;
+		checker.Roughness    = 1.0f;
+		checker.Metallic     = 0.0f;
+		checker.TextureScale = 0.5f;
+
+		Material metal;
+		metal.Albedo    = Vector3(0.85f, 0.8f, 0.65f);
+		metal.Roughness = 0.25f;
+		metal.Metallic  = 1.0f;
+
+		Material glass;
+		glass.Albedo       = Vector3(0.9f, 0.95f, 1.0f);
+		glass.Roughness    = 0.05f;
+		glass.IOR          = 1.5f;
+		glass.Transmission = 0.9f;
+
+		Material emissive;
+		emissive.Albedo    = Vector3(0.2f, 0.05f, 0.05f);
+		emissive.Roughness = 0.4f;
+		emissive.Emission  = Vector3(3.0f, 0.6f, 0.2f);
+
+		Material mirror;
+		mirror.Albedo    = Vector3::One;
+		mirror.Roughness = 0.2f;
+		mirror.Metallic  = 1.0f;
+
+		MaterialLibrary& library = GetMaterialLibrary();
+
+		SceneMaterials materials;
+		materials.Checker  = library.Add(checker);
+		materials.Metal    = library.Add(metal);
+		materials.Glass    = library.Add(glass);
+		materials.Emissive = library.Add(emissive);
+		materials.Mirror   = library.Add(mirror);
+		return materials;
+	}
 
 	std::shared_ptr<CSGTree> BuildPillarTemplate()
 	{
@@ -50,13 +105,13 @@ namespace
 		return builder.Build(root);
 	}
 
-	std::shared_ptr<CSGTree> BuildGearTemplate()
+	std::shared_ptr<CSGTree> BuildGearTemplate(s32 ringMaterial, s32 toothMaterial)
 	{
 		constexpr s32 ToothCount = 8;
 
 		CSGTreeBuilder builder;
 
-		s32 ring = builder.AddTorus(Vector3::Zero, Quaternion::Identity, 1.0f, 0.22f);
+		s32 ring = builder.AddTorus(Vector3::Zero, Quaternion::Identity, 1.0f, 0.22f, 1.0f, ringMaterial);
 
 		s32 root = ring;
 		for (s32 i = 0; i < ToothCount; i++)
@@ -65,7 +120,7 @@ namespace
 			Quaternion rotation = Quaternion::FromAxisAngle(Vector3::UnitY, angle);
 			Vector3 position    = rotation.Rotate(Vector3(0.0f, 0.0f, 1.0f));
 
-			s32 tooth = builder.AddBox(position, rotation, Vector3(0.15f, 0.15f, 0.35f));
+			s32 tooth = builder.AddBox(position, rotation, Vector3(0.15f, 0.15f, 0.35f), 1.0f, toothMaterial);
 			root	  = builder.Union(root, tooth);
 		}
 
@@ -75,15 +130,15 @@ namespace
 		return builder.Build(root);
 	}
 
-	BVH BuildScene()
+	BVH BuildScene(const SceneMaterials& materials)
 	{
 		std::shared_ptr<CSGTree> pillarTemplate = BuildPillarTemplate();
 		std::shared_ptr<CSGTree> blobTemplate   = BuildBlobTemplate();
-		std::shared_ptr<CSGTree> gearTemplate   = BuildGearTemplate();
+		std::shared_ptr<CSGTree> gearTemplate   = BuildGearTemplate(materials.Emissive, materials.Metal);
 
 		std::vector<SceneObject> objects;
 
-		objects.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f));
+		objects.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f, materials.Checker));
 
 		constexpr s32 PillarCount  = 6;
 		constexpr f32 PillarRadius = 6.0f;
@@ -94,11 +149,11 @@ namespace
 			Vector3 position(std::sin(angle) * PillarRadius, 0.0f, std::cos(angle) * PillarRadius);
 
 			f32 heightScale = 0.8f + 0.4f * ((f32)i / (f32)PillarCount);
-			objects.push_back(SceneObject::CreateFromTemplate(pillarTemplate, position, Quaternion::Identity, Vector3(1.0f, heightScale, 1.0f)));
+			objects.push_back(SceneObject::CreateFromTemplate(pillarTemplate, position, Quaternion::Identity, Vector3(1.0f, heightScale, 1.0f), materials.Metal));
 		}
 
-		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(0.0f, 1.6f, 0.0f)));
-		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(2.5f, 1.2f, -2.0f), Quaternion::Identity, Vector3(0.7f, 0.5f, 0.7f)));
+		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(0.0f, 1.6f, 0.0f), Quaternion::Identity, Vector3::One, materials.Glass));
+		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(2.5f, 1.2f, -2.0f), Quaternion::Identity, Vector3(0.7f, 0.5f, 0.7f), materials.Mirror));
 		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(-3.0f, 2.0f, 1.5f), Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 3.0f)));
 
 		objects.push_back(SceneObject::CreateFromTemplate(
@@ -119,11 +174,11 @@ namespace
 		return bvh;
 	}
 
-	BVH BuildCornellBox()
+	BVH BuildCornellBox(const SceneMaterials& materials)
 	{
 		std::vector<SceneObject> objects;
 
-		objects.push_back(SceneObject::CreatePlane(Vector3::UnitY,  1.0f));
+		objects.push_back(SceneObject::CreatePlane(Vector3::UnitY,  1.0f, materials.Checker));
 		objects.push_back(SceneObject::CreatePlane(-Vector3::UnitY, 3.0f));
 		objects.push_back(SceneObject::CreatePlane(Vector3::UnitX,  2.0f));
 		objects.push_back(SceneObject::CreatePlane(-Vector3::UnitX, 2.0f));
@@ -133,20 +188,33 @@ namespace
 		objects.push_back(SceneObject::CreateBox(
 			Vector3(-0.80f, 0.0f, 2.8f),
 			Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 4.0f),
-			Vector3(0.5f, 1.0f, 0.5f)
+			Vector3(0.5f, 1.0f, 0.5f),
+			Vector3::One,
+			materials.Metal
 		));
 
-		objects.push_back(SceneObject::CreateSphere(Vector3(0.75f, -0.35f, 3.15f), 0.55f));
+		objects.push_back(SceneObject::CreateSphere(Vector3(0.75f, -0.35f, 3.15f), 0.55f, Vector3::One, materials.Mirror));
 
 		objects.push_back(SceneObject::CreateBox(
 			Vector3(0.0f, 3.0f, 2.2f),
 			Quaternion::Identity,
-			Vector3(0.5f, 0.01f, 0.5f)
+			Vector3(0.5f, 0.01f, 0.5f),
+			Vector3::One,
+			materials.Emissive
 		));
 
 		BVH bvh;
 		bvh.Build(std::move(objects));
 		return bvh;
+	}
+
+	Lighting BuildLighting()
+	{
+		Lighting lighting;
+		lighting.AddPointLight({ Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f });
+		lighting.AddPointLight({ Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f });
+		lighting.AddPointLight({ Vector3(0.0f, 2.9f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 2.0f });
+		return lighting;
 	}
 }
 
@@ -155,8 +223,12 @@ s32 main()
 {
 	Window window(Width, Height, L"Ether");
 	Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
-	BVH bvh = BuildScene();
-	Raymarcher raymarcher(camera, bvh, Width, Height);
+
+	SceneMaterials materials = RegisterMaterials();
+	BVH bvh				     = BuildCornellBox(materials);
+	Lighting lighting		 = BuildLighting();
+
+	Raymarcher raymarcher(camera, bvh, lighting, Width, Height);
 
 	std::vector<u32> framebuffer(Width * Height);
 

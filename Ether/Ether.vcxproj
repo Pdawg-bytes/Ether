@@ -162,8 +162,12 @@
     <ClCompile Include="Scene\SDFPrimitives.cpp" />
     <ClCompile Include="Scene\CSGTree.cpp" />
     <ClCompile Include="Scene\BVH.cpp" />
+    <ClCompile Include="Scene\Texture.cpp" />
+    <ClCompile Include="Scene\Material.cpp" />
+    <ClCompile Include="Scene\MaterialLibrary.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
     <ClCompile Include="Renderer\Raymarcher.cpp" />
+    <ClCompile Include="Renderer\Lighting.cpp" />
     <ClCompile Include="Platform\Window.cpp" />
     <ClCompile Include="Platform\ThreadPool.cpp" />
   </ItemGroup>
@@ -178,8 +182,13 @@
     <ClInclude Include="Scene\SDFPrimitives.h" />
     <ClInclude Include="Scene\CSGTree.h" />
     <ClInclude Include="Scene\BVH.h" />
+    <ClInclude Include="Scene\Texture.h" />
+    <ClInclude Include="Scene\Material.h" />
+    <ClInclude Include="Scene\MaterialLibrary.h" />
     <ClInclude Include="Renderer\Camera.h" />
     <ClInclude Include="Renderer\Raymarcher.h" />
+    <ClInclude Include="Renderer\Lighting.h" />
+    <ClInclude Include="Renderer\PointLight.h" />
     <ClInclude Include="Platform\Window.h" />
     <ClInclude Include="Platform\ThreadPool.h" />
   </ItemGroup>

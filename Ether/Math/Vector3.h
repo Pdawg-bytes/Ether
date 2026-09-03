@@ -54,6 +54,7 @@ struct Vector3
 	static Vector3 Abs(const Vector3& v)                   { return Vector3(std::fabs(v.X), std::fabs(v.Y), std::fabs(v.Z)); }
 
 	static const Vector3 Zero;
+	static const Vector3 One;
 	static const Vector3 UnitX;
 	static const Vector3 UnitY;
 	static const Vector3 UnitZ;
@@ -62,6 +63,7 @@ struct Vector3
 inline Vector3 operator*(f32 scalar, const Vector3& vector) { return vector * scalar; }
 
 inline const Vector3 Vector3::Zero(0.0f, 0.0f, 0.0f);
+inline const Vector3 Vector3::One(1.0f, 1.0f, 1.0f);
 inline const Vector3 Vector3::UnitX(1.0f, 0.0f, 0.0f);
 inline const Vector3 Vector3::UnitY(0.0f, 1.0f, 0.0f);
 inline const Vector3 Vector3::UnitZ(0.0f, 0.0f, 1.0f);
