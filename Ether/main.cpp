@@ -3,21 +3,123 @@
 #include "Renderer/Raymarcher.h"
 #include "Scene/BVH.h"
 #include "Scene/SceneObject.h"
+#include "Scene/CSGTree.h"
 #include "Math/MathUtil.h"
 
 #include <algorithm>
 #include <chrono>
+#include <cmath>
+#include <memory>
 #include <string>
 #include <vector>
 
 namespace
 {
-	constexpr u32 Width			   = 480;
-	constexpr u32 Height		   = 270;
+	constexpr u32 Width			   = 200;
+	constexpr u32 Height		   = 120;
 	constexpr f32 MoveSpeed		   = 3.5f;
 	constexpr f32 MouseSensitivity = 0.15f;
 
+	std::shared_ptr<CSGTree> BuildPillarTemplate()
+	{
+		CSGTreeBuilder builder;
+
+		s32 shaft = builder.AddBox(Vector3(0.0f, 1.5f, 0.0f), Quaternion::Identity, Vector3(0.4f, 1.5f, 0.4f));
+		s32 cap   = builder.AddSphere(Vector3(0.0f, 3.0f, 0.0f), 0.55f);
+		s32 body  = builder.Union(shaft, cap);
+
+		s32 hole = builder.AddCylinder(Vector3(0.0f, 1.5f, 0.0f), Quaternion::Identity, 0.15f, 2.0f);
+		s32 root = builder.Subtraction(body, hole);
+
+		return builder.Build(root);
+	}
+
+	std::shared_ptr<CSGTree> BuildBlobTemplate()
+	{
+		constexpr f32 Blend = 0.35f;
+
+		CSGTreeBuilder builder;
+
+		s32 a = builder.AddSphere(Vector3(0.0f, 0.0f, 0.0f), 0.6f);
+		s32 b = builder.AddSphere(Vector3(0.7f, 0.3f, 0.2f), 0.45f);
+		s32 c = builder.AddSphere(Vector3(-0.5f, 0.45f, -0.3f), 0.5f);
+
+		s32 ab   = builder.SmoothUnion(a, b, Blend);
+		s32 root = builder.SmoothUnion(ab, c, Blend);
+
+		return builder.Build(root);
+	}
+
+	std::shared_ptr<CSGTree> BuildGearTemplate()
+	{
+		constexpr s32 ToothCount = 8;
+
+		CSGTreeBuilder builder;
+
+		s32 ring = builder.AddTorus(Vector3::Zero, Quaternion::Identity, 1.0f, 0.22f);
+
+		s32 root = ring;
+		for (s32 i = 0; i < ToothCount; i++)
+		{
+			f32 angle		    = (Math::PI * 2.0f) * ((f32)i / (f32)ToothCount);
+			Quaternion rotation = Quaternion::FromAxisAngle(Vector3::UnitY, angle);
+			Vector3 position    = rotation.Rotate(Vector3(0.0f, 0.0f, 1.0f));
+
+			s32 tooth = builder.AddBox(position, rotation, Vector3(0.15f, 0.15f, 0.35f));
+			root	  = builder.Union(root, tooth);
+		}
+
+		s32 axleHole = builder.AddCylinder(Vector3::Zero, Quaternion::Identity, 0.3f, 1.0f);
+		root		 = builder.Subtraction(root, axleHole);
+
+		return builder.Build(root);
+	}
+
 	BVH BuildScene()
+	{
+		std::shared_ptr<CSGTree> pillarTemplate = BuildPillarTemplate();
+		std::shared_ptr<CSGTree> blobTemplate   = BuildBlobTemplate();
+		std::shared_ptr<CSGTree> gearTemplate   = BuildGearTemplate();
+
+		std::vector<SceneObject> objects;
+
+		objects.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f));
+
+		constexpr s32 PillarCount  = 6;
+		constexpr f32 PillarRadius = 6.0f;
+
+		for (s32 i = 0; i < PillarCount; i++)
+		{
+			f32 angle = (Math::PI * 2.0f) * ((f32)i / (f32)PillarCount);
+			Vector3 position(std::sin(angle) * PillarRadius, 0.0f, std::cos(angle) * PillarRadius);
+
+			f32 heightScale = 0.8f + 0.4f * ((f32)i / (f32)PillarCount);
+			objects.push_back(SceneObject::CreateFromTemplate(pillarTemplate, position, Quaternion::Identity, Vector3(1.0f, heightScale, 1.0f)));
+		}
+
+		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(0.0f, 1.6f, 0.0f)));
+		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(2.5f, 1.2f, -2.0f), Quaternion::Identity, Vector3(0.7f, 0.5f, 0.7f)));
+		objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(-3.0f, 2.0f, 1.5f), Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 3.0f)));
+
+		objects.push_back(SceneObject::CreateFromTemplate(
+			gearTemplate,
+			Vector3(4.0f, 0.3f, 4.0f),
+			Quaternion::FromAxisAngle(Vector3::UnitX, Math::PI / 2.0f)
+		));
+
+		objects.push_back(SceneObject::CreateFromTemplate(
+			gearTemplate,
+			Vector3(-4.0f, 1.3f, -4.0f),
+			Quaternion::FromAxisAngle(Vector3::UnitZ, Math::PI / 8.0f),
+			Vector3(1.0f, 1.6f, 1.0f)
+		));
+
+		BVH bvh;
+		bvh.Build(std::move(objects));
+		return bvh;
+	}
+
+	BVH BuildCornellBox()
 	{
 		std::vector<SceneObject> objects;
 
@@ -47,6 +149,7 @@ namespace
 		return bvh;
 	}
 }
+
 
 s32 main()
 {

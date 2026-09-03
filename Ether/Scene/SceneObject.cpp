@@ -1,18 +1,25 @@
 #include "SceneObject.h"
 #include "SDFPrimitives.h"
+#include "CSGTree.h"
+
+#include <algorithm>
 
 f32 SceneObject::Distance(const Vector3& worldPoint) const
 {
-	Vector3 localPoint = Rotation.Conjugate().Rotate(worldPoint - Position) * (1.0f / Scale);
-	return DistanceFunc(*this, localPoint) * Scale;
+	Vector3 localPoint = Rotation.Conjugate().Rotate(worldPoint - Position) / Scale;
+	f32 rawDistance    = Template ? Template->Distance(localPoint) : DistanceFunc(Data, localPoint);
+	f32 minScale       = std::min({ Scale.X, Scale.Y, Scale.Z });
+
+	return rawDistance * minScale;
 }
 
 Vector3 SceneObject::Normal(const Vector3& worldPoint) const
 {
-	Vector3 localPoint  = Rotation.Conjugate().Rotate(worldPoint - Position) * (1.0f / Scale);
-	Vector3 localNormal = NormalFunc(*this, localPoint);
+	Vector3 localPoint  = Rotation.Conjugate().Rotate(worldPoint - Position) / Scale;
+	Vector3 localNormal = Template ? Template->Normal(localPoint) : NormalFunc(Data, localPoint);
 
-	return Rotation.Rotate(localNormal).Normalized();
+	Vector3 correctedNormal(localNormal.X / Scale.X, localNormal.Y / Scale.Y, localNormal.Z / Scale.Z);
+	return Rotation.Rotate(correctedNormal).Normalized();
 }
 
 void SceneObject::UpdateWorldBounds(const AABB& localBounds)
@@ -30,18 +37,23 @@ void SceneObject::UpdateWorldBounds(const AABB& localBounds)
 	};
 
 	AABB worldBounds;
+	f32 boundingRadius = 0.0f;
 	for (const Vector3& corner : corners)
 	{
-		Vector3 worldCorner = Position + Rotation.Rotate(corner * Scale);
-		worldBounds.Min	    = Vector3::Min(worldBounds.Min, worldCorner);
-		worldBounds.Max		= Vector3::Max(worldBounds.Max, worldCorner);
+		Vector3 scaledCorner = corner * Scale;
+		Vector3 worldCorner  = Position + Rotation.Rotate(scaledCorner);
+		worldBounds.Min	     = Vector3::Min(worldBounds.Min, worldCorner);
+		worldBounds.Max		 = Vector3::Max(worldBounds.Max, worldCorner);
+
+		boundingRadius = std::max(boundingRadius, scaledCorner.Length());
 	}
 
-	WorldBounds = worldBounds;
+	WorldBounds	   = worldBounds;
+	BoundingRadius = boundingRadius;
 }
 
 
-SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, f32 scale)
+SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, const Vector3& scale)
 {
 	SceneObject object;
 	object.Position			  = position;
@@ -54,7 +66,7 @@ SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, f32 s
 	return object;
 }
 
-SceneObject SceneObject::CreateBox(const Vector3& position, const Quaternion& rotation, const Vector3& extents, f32 scale)
+SceneObject SceneObject::CreateBox(const Vector3& position, const Quaternion& rotation, const Vector3& extents, const Vector3& scale)
 {
 	SceneObject object;
 	object.Position			= position;
@@ -78,5 +90,17 @@ SceneObject SceneObject::CreatePlane(const Vector3& normal, f32 distance)
 	object.Data.Plane.Distance	 = distance;
 	object.IsBounded			 = false;
 
+	return object;
+}
+
+SceneObject SceneObject::CreateFromTemplate(std::shared_ptr<CSGTree> tmpl, const Vector3& position, const Quaternion& rotation, const Vector3& scale)
+{
+	SceneObject object;
+	object.Position = position;
+	object.Rotation = rotation;
+	object.Scale	= scale;
+	object.Template = std::move(tmpl);
+
+	object.UpdateWorldBounds(object.Template->LocalBounds());
 	return object;
 }

@@ -211,7 +211,13 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
 
 		if (node.IsLeaf())
 		{
-			f32 distance = _objects[node.ObjectIndex].Distance(worldPoint);
+			const SceneObject& object = _objects[node.ObjectIndex];
+
+			f32 sphereDistance = (worldPoint - object.Position).Length() - object.BoundingRadius;
+			if (sphereDistance > bestDistance)
+				continue;
+
+			f32 distance = object.Distance(worldPoint);
 			if (distance < bestDistance)
 			{
 				bestDistance   = distance;
@@ -220,8 +226,22 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
 		}
 		else
 		{
-			stack[stackSize++] = node.Left;
-			stack[stackSize++] = node.Right;
+			const BVHNode& left  = _nodes[node.Left];
+			const BVHNode& right = _nodes[node.Right];
+
+			f32 leftDistSq  = left.Bounds.DistanceSquared(worldPoint);
+			f32 rightDistSq = right.Bounds.DistanceSquared(worldPoint);
+
+			if (leftDistSq < rightDistSq)
+			{
+				stack[stackSize++] = node.Right;
+				stack[stackSize++] = node.Left;
+			}
+			else
+			{
+				stack[stackSize++] = node.Left;
+				stack[stackSize++] = node.Right;
+			}
 		}
 	}
 

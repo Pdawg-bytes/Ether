@@ -17,6 +17,7 @@ struct Vector3
 	constexpr Vector3 operator*(f32 scalar) const { return Vector3(X * scalar, Y * scalar, Z * scalar); }
 	constexpr Vector3 operator*(const Vector3& other) const { return Vector3(X * other.X, Y * other.Y, Z * other.Z); }
 		      Vector3 operator/(f32 scalar) const { f32 inverse = 1.0f / scalar; return Vector3(X * inverse, Y * inverse, Z * inverse); }
+		      Vector3 operator/(const Vector3& other) const { return Vector3(X / other.X, Y / other.Y, Z / other.Z); }
 
 	Vector3& operator+=(const Vector3& other) { X += other.X; Y += other.Y; Z += other.Z; return *this; }
 	Vector3& operator-=(const Vector3& other) { X -= other.X; Y -= other.Y; Z -= other.Z; return *this; }

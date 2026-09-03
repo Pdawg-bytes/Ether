@@ -24,6 +24,9 @@
     <ClCompile Include="Scene\SDFPrimitives.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Scene\CSGTree.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
     <ClCompile Include="Scene\BVH.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -60,6 +63,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Scene\SDFPrimitives.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Scene\CSGTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Scene\BVH.h">
