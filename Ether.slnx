@@ -1,0 +1,7 @@
+<Solution>
+  <Configurations>
+    <Platform Name="x64" />
+    <Platform Name="x86" />
+  </Configurations>
+  <Project Path="Ether/Ether.vcxproj" Id="62430fb1-f3c2-460b-b013-5ffebcbfe1bd" />
+</Solution>
