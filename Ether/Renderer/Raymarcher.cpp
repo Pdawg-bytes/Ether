@@ -83,7 +83,8 @@ Vector3 Raymarcher::Trace(const Ray& ray) const
 	MarchResult result = Raymarcher::Raymarch(ray);
 
 	if (result.Hit)
-		return Shade(_bvh, result.ObjectIndex, result.Point);
+		//return Shade(_bvh, result.ObjectIndex, result.Point);
+		return _bvh.GetObject(result.ObjectIndex).Normal(result.Point);
 	else
 		return BackgroundColor;
 }

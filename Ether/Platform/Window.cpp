@@ -145,22 +145,22 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				return 0;
 			}
 			break;
+		case WM_NCMOUSEMOVE:
+		case WM_NCLBUTTONDOWN:
+			if (window && window->_hasFocus)
+			{
+				window->_hasFocus = false;
+				ClipCursor(nullptr);
+				ReleaseCapture();
+				ShowCursor(TRUE);
+			}
+			break;
 		case WM_LBUTTONDOWN:
 		case WM_RBUTTONDOWN:
 		case WM_MBUTTONDOWN:
 			if (window && !window->_hasFocus)
 			{
 				SetFocus(hwnd);
-			}
-			break;
-		case WM_CLOSE:
-		case WM_DESTROY:
-			if (window) window->_running = false;
-			PostQuitMessage(0);
-			return 0;
-		case WM_SETFOCUS:
-			if (window)
-			{
 				window->_hasFocus = true;
 				ShowCursor(FALSE);
 
@@ -173,14 +173,37 @@ LRESULT CALLBACK Window::WndProc(HWND hwnd, UINT msg, WPARAM wParam, LPARAM lPar
 				SetCursorPos(window->_windowCenter.x, window->_windowCenter.y);
 				SetCapture(window->_hwnd);
 			}
+			break;
+		case WM_CLOSE:
+		case WM_DESTROY:
+			if (window) window->_running = false;
+			PostQuitMessage(0);
 			return 0;
+		case WM_SETFOCUS:
+			if (window)
+			{
+			}
+			return 0;
+		case WM_MOVE:
+		case WM_SIZE:
+			if (window)
+			{
+				RECT client;
+				GetClientRect(window->_hwnd, &client);
+				POINT tl{ client.left, client.top };
+				ClientToScreen(window->_hwnd, &tl);
+				window->_windowCenter.x = tl.x + (client.right - client.left) / 2;
+				window->_windowCenter.y = tl.y + (client.bottom - client.top) / 2;
+			}
+			break;
 		case WM_KILLFOCUS:
 			if (window)
 			{
+				const bool hadFocus = window->_hasFocus;
 				window->_hasFocus = false;
 				ClipCursor(NULL);
 				ReleaseCapture();
-				ShowCursor(TRUE);
+				if (hadFocus) ShowCursor(TRUE);
 			}
 			return 0;
 	}

@@ -56,16 +56,17 @@ Vector3 CSGTree::Normal(const Vector3& localPoint) const
 
 	constexpr f32 Epsilon = 0.0005f;
 
-	Vector3 dx(Epsilon, 0.0f, 0.0f);
-	Vector3 dy(0.0f, Epsilon, 0.0f);
-	Vector3 dz(0.0f, 0.0f, Epsilon);
+	const Vector3 k0( 1.0f, -1.0f, -1.0f);
+	const Vector3 k1(-1.0f, -1.0f,  1.0f);
+	const Vector3 k2(-1.0f,  1.0f, -1.0f);
+	const Vector3 k3( 1.0f,  1.0f,  1.0f);
 
-	Vector3 gradient(
-		Distance(localPoint + dx) - Distance(localPoint - dx),
-		Distance(localPoint + dy) - Distance(localPoint - dy),
-		Distance(localPoint + dz) - Distance(localPoint - dz)
-	);
+	f32 d0 = Distance(localPoint + k0 * Epsilon);
+	f32 d1 = Distance(localPoint + k1 * Epsilon);
+	f32 d2 = Distance(localPoint + k2 * Epsilon);
+	f32 d3 = Distance(localPoint + k3 * Epsilon);
 
+	Vector3 gradient = k0 * d0 + k1 * d1 + k2 * d2 + k3 * d3;
 	return gradient.Normalized();
 }
 
