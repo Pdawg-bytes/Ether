@@ -3,7 +3,7 @@
 #include "Camera.h"
 #include "../Scene/BVH.h"
 
-#define MULTI_THREADED_RENDERING
+//#define MULTI_THREADED_RENDERING
 
 struct MarchResult
 {

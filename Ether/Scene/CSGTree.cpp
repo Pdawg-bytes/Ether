@@ -86,13 +86,13 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 		const CSGNode& left  = _nodes[node.Left];
 		const CSGNode& right = _nodes[node.Right];
 
-		f32 leftBoundDist  = std::sqrt(left.LocalBounds.DistanceSquared(localPoint));
-		f32 rightBoundDist = std::sqrt(right.LocalBounds.DistanceSquared(localPoint));
+		f32 leftBoundDistSq  = left.LocalBounds.DistanceSquared(localPoint);
+		f32 rightBoundDistSq = right.LocalBounds.DistanceSquared(localPoint);
 
-		if (leftBoundDist <= rightBoundDist)
+		if (leftBoundDistSq <= rightBoundDistSq)
 		{
 			CSGEval a = EvaluateNode(node.Left, localPoint);
-			if (rightBoundDist >= a.Distance)
+			if (a.Distance <= 0.0f || rightBoundDistSq >= a.Distance * a.Distance)
 				return a;
 
 			CSGEval b = EvaluateNode(node.Right, localPoint);
@@ -101,7 +101,7 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 		else
 		{
 			CSGEval b = EvaluateNode(node.Right, localPoint);
-			if (leftBoundDist >= b.Distance)
+			if (b.Distance <= 0.0f || leftBoundDistSq >= b.Distance * b.Distance)
 				return b;
 
 			CSGEval a = EvaluateNode(node.Left, localPoint);

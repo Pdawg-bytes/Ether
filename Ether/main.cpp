@@ -175,6 +175,7 @@ s32 main()
 
 		f32 mouseDeltaX, mouseDeltaY;
 		window.GetMouseDelta(mouseDeltaX, mouseDeltaY);
+		bool cameraChanged = mouseDeltaX != 0.0f || mouseDeltaY != 0.0f;
 
 		camera.Yaw   += mouseDeltaX * MouseSensitivity;
 		camera.Pitch -= mouseDeltaY * MouseSensitivity;
@@ -192,9 +193,13 @@ s32 main()
 		if (window.IsKeyDown(VK_CONTROL)) speed *= 4.0f;
 
 		if (movement != Vector3::Zero)
+		{
 			camera.Position += movement.Normalized() * speed;
+			cameraChanged = true;
+		}
 
-		camera.UpdateView();
+		if (cameraChanged)
+			camera.UpdateView();
 
 		bool bDown = window.IsKeyDown('B');
 		if (bDown && !prevBDown) showBVH = !showBVH;

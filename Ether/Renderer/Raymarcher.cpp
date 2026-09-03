@@ -2,6 +2,7 @@
 #include "../Platform/ThreadPool.h"
 
 #include <algorithm>
+#include <array>
 #include <atomic>
 #include <cstdint>
 
@@ -10,18 +11,32 @@ namespace
 	constexpr s32 MaxSteps         = 128;
 	constexpr f32 MinHitDistance   = 0.001f;
 	constexpr f32 MaxTraceDistance = 100.0f;
+	constexpr usize GammaTableSize = 4096;
 
 	const Vector3 LightDirection = Vector3(-0.5f, 1.0f, -0.3f).Normalized();
 
 	u32 PackColor(const Vector3& color)
 	{
-		f32 correctedR = std::pow(std::clamp(color.X, 0.0f, 1.0f), 1.0f / 2.2f);
-		f32 correctedG = std::pow(std::clamp(color.Y, 0.0f, 1.0f), 1.0f / 2.2f);
-		f32 correctedB = std::pow(std::clamp(color.Z, 0.0f, 1.0f), 1.0f / 2.2f);
+		static const std::array<u8, GammaTableSize> gammaTable = []
+		{
+			std::array<u8, GammaTableSize> table{};
 
-		u32 r = (u32)(correctedR * 255.0f);
-		u32 g = (u32)(correctedG * 255.0f);
-		u32 b = (u32)(correctedB * 255.0f);
+			for (usize i = 0; i < GammaTableSize; i++)
+				table[i] = (u8)(std::pow((f32)i / (GammaTableSize - 1), 1.0f / 2.2f) * 255.0f);
+
+			return table;
+		}();
+
+		auto ToGamma = [](f32 channel) -> u32
+		{
+			f32 clamped = std::clamp(channel, 0.0f, 1.0f);
+			usize index = (usize)(clamped * (GammaTableSize - 1));
+			return gammaTable[index];
+		};
+
+		u32 r = ToGamma(color.X);
+		u32 g = ToGamma(color.Y);
+		u32 b = ToGamma(color.Z);
 
 		return (255u << 24) | (b << 16) | (g << 8) | r;
 	}
