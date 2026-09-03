@@ -8,7 +8,7 @@ f32 SceneObject::Distance(const Vector3& worldPoint) const
 {
 	Vector3 localPoint = Rotation.Conjugate().Rotate(worldPoint - Position) / Scale;
 	f32 rawDistance    = Template ? Template->Distance(localPoint) : DistanceFunc(Data, localPoint);
-	f32 minScale       = std::min({ Scale.X, Scale.Y, Scale.Z });
+	f32 minScale       = std::min(Scale.X, std::min(Scale.Y, Scale.Z));
 
 	return rawDistance * minScale;
 }

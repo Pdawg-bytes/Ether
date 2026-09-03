@@ -160,7 +160,7 @@ s32 main()
 
 	std::vector<u32> framebuffer(Width * Height);
 
-	bool showBVH   = true;
+	bool showBVH   = false;
 	bool prevBDown = false;
 
 	auto lastTime		= std::chrono::steady_clock::now();

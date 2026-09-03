@@ -8,8 +8,8 @@
 
 namespace
 {
-	constexpr s32 MaxSteps         = 128;
-	constexpr f32 MinHitDistance   = 0.001f;
+	constexpr s32 MaxSteps         = 512;
+	constexpr f32 MinHitDistance   = 0.0001f;
 	constexpr f32 MaxTraceDistance = 100.0f;
 	constexpr usize GammaTableSize = 4096;
 
@@ -83,8 +83,7 @@ Vector3 Raymarcher::Trace(const Ray& ray) const
 	MarchResult result = Raymarcher::Raymarch(ray);
 
 	if (result.Hit)
-		//return Shade(_bvh, result.ObjectIndex, result.Point);
-		return _bvh.GetObject(result.ObjectIndex).Normal(result.Point);
+		return Shade(_bvh, result.ObjectIndex, result.Point);
 	else
 		return BackgroundColor;
 }

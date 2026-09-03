@@ -22,9 +22,17 @@ struct AABB
 
 	f32 DistanceSquared(const Vector3& point) const
 	{
-		f32 dx = std::max({ Min.X - point.X, 0.0f, point.X - Max.X });
-		f32 dy = std::max({ Min.Y - point.Y, 0.0f, point.Y - Max.Y });
-		f32 dz = std::max({ Min.Z - point.Z, 0.0f, point.Z - Max.Z });
+		f32 dx = 0.0f;
+		if (point.X < Min.X)      dx = Min.X - point.X;
+		else if (point.X > Max.X) dx = point.X - Max.X;
+
+		f32 dy = 0.0f;
+		if (point.Y < Min.Y)      dy = Min.Y - point.Y;
+		else if (point.Y > Max.Y) dy = point.Y - Max.Y;
+
+		f32 dz = 0.0f;
+		if (point.Z < Min.Z)      dz = Min.Z - point.Z;
+		else if (point.Z > Max.Z) dz = point.Z - Max.Z;
 
 		return dx * dx + dy * dy + dz * dz;
 	}
@@ -32,10 +40,6 @@ struct AABB
 	f32 SurfaceArea() const
 	{
 		Vector3 d = Max - Min;
-
-		if (d.X < 0.0f || d.Y < 0.0f || d.Z < 0.0f)
-			return 0.0f;
-
 		return 2.0f * (d.X * d.Y + d.Y * d.Z + d.Z * d.X);
 	}
 };
