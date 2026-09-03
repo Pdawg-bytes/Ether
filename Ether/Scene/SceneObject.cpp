@@ -1,6 +1,7 @@
 #include "SceneObject.h"
 #include "SDFPrimitives.h"
 #include "CSGTree.h"
+#include "../Math/MathUtil.h"
 
 #include <algorithm>
 
@@ -35,32 +36,21 @@ s32 SceneObject::ResolveMaterialIndex(const Vector3& worldPoint) const
 
 void SceneObject::UpdateWorldBounds(const AABB& localBounds)
 {
-    Vector3 corners[8] =
-    {
-        Vector3(localBounds.Min.X, localBounds.Min.Y, localBounds.Min.Z),
-        Vector3(localBounds.Max.X, localBounds.Min.Y, localBounds.Min.Z),
-        Vector3(localBounds.Min.X, localBounds.Max.Y, localBounds.Min.Z),
-        Vector3(localBounds.Max.X, localBounds.Max.Y, localBounds.Min.Z),
-        Vector3(localBounds.Min.X, localBounds.Min.Y, localBounds.Max.Z),
-        Vector3(localBounds.Max.X, localBounds.Min.Y, localBounds.Max.Z),
-        Vector3(localBounds.Min.X, localBounds.Max.Y, localBounds.Max.Z),
-        Vector3(localBounds.Max.X, localBounds.Max.Y, localBounds.Max.Z),
-    };
-
-    AABB worldBounds;
-    f32 boundingRadius = 0.0f;
-    for (const Vector3& corner : corners)
-    {
-        Vector3 scaledCorner = corner * Scale;
-        Vector3 worldCorner  = Position + Rotation.Rotate(scaledCorner);
-        worldBounds.Min	     = Vector3::Min(worldBounds.Min, worldCorner);
-        worldBounds.Max		 = Vector3::Max(worldBounds.Max, worldCorner);
-
-        boundingRadius = std::max(boundingRadius, scaledCorner.Length());
-    }
-
-    WorldBounds	   = worldBounds;
-    BoundingRadius = boundingRadius;
+    Vector3 scaledMin = localBounds.Min * Scale;
+    Vector3 scaledMax = localBounds.Max * Scale;
+    AABB scaledBounds(scaledMin, scaledMax);
+    
+    WorldBounds = Math::TransformBounds(scaledBounds, Position, Rotation, 1.0f);
+    
+    BoundingRadius = 0.0f;
+    BoundingRadius = std::max(BoundingRadius, scaledMin.Length());
+    BoundingRadius = std::max(BoundingRadius, scaledMax.Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMin.X, scaledMin.Y, scaledMax.Z).Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMin.X, scaledMax.Y, scaledMin.Z).Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMin.X, scaledMax.Y, scaledMax.Z).Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMax.X, scaledMin.Y, scaledMin.Z).Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMax.X, scaledMin.Y, scaledMax.Z).Length());
+    BoundingRadius = std::max(BoundingRadius, Vector3(scaledMax.X, scaledMax.Y, scaledMin.Z).Length());
 }
 
 

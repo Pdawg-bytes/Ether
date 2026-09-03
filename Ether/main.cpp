@@ -152,7 +152,7 @@ namespace
             objects.push_back(SceneObject::CreateFromTemplate(pillarTemplate, position, Quaternion::Identity, Vector3(1.0f, heightScale, 1.0f), materials.Metal));
         }
 
-        objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(0.0f, 1.6f, 0.0f), Quaternion::Identity, Vector3::One, materials.Metal));
+        objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(0.0f, 1.6f, 0.0f), Quaternion::Identity, Vector3::One, materials.Glass));
         objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(2.5f, 1.2f, -2.0f), Quaternion::Identity, Vector3(0.7f, 0.5f, 0.7f), materials.Mirror));
         objects.push_back(SceneObject::CreateFromTemplate(blobTemplate, Vector3(-3.0f, 2.0f, 1.5f), Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 3.0f)));
 
@@ -211,9 +211,9 @@ namespace
     Lighting BuildLighting()
     {
         Lighting lighting;
-        lighting.AddPointLight({ Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f });
-        lighting.AddPointLight({ Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f });
-        lighting.AddPointLight({ Vector3(0.0f, 2.9f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 2.0f });
+        lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
+        lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.9f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 2.0f));
         return lighting;
     }
 }

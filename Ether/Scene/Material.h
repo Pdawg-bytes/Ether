@@ -5,6 +5,8 @@
 
 #include <memory>
 
+using TexturePtr = std::shared_ptr<Texture>;
+
 struct MaterialSample
 {
     Vector3 Albedo;
@@ -19,7 +21,6 @@ struct MaterialSample
 struct Material
 {
     Vector3 Albedo = Vector3(0.8f);
-    using TexturePtr = std::shared_ptr<Texture>;
     TexturePtr AlbedoMap;
 
     f32 Roughness = 0.5f;

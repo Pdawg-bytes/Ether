@@ -27,7 +27,7 @@ namespace SDF
         );
 
         f32 outsideDistance = Vector3::Max(q, Vector3::Zero).Length();
-        f32 insideDistance  = std::min(std::max({ q.X, q.Y, q.Z }), 0.0f);
+        f32 insideDistance  = std::min(std::max(q.X, std::max(q.Y, q.Z)), 0.0f);
 
         return outsideDistance + insideDistance;
     }

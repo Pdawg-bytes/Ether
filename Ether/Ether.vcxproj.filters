@@ -101,9 +101,6 @@
     <ClInclude Include="Renderer\Lighting.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\PointLight.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="Platform\Window.h">
       <Filter>Header Files</Filter>
     </ClInclude>

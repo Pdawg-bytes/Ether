@@ -12,6 +12,7 @@ namespace
 {
     constexpr s32 MaxSteps            = 512;
     constexpr f32 MinHitDistance      = 0.0001f;
+    constexpr f32 RefractRayBias      = 0.001f;
     constexpr f32 MaxTraceDistance    = 100.0f;
     constexpr s32 MaxBounces          = 4;
     constexpr f32 MinBounceThroughput = 0.02f;
@@ -111,22 +112,25 @@ Vector3 Raymarcher::Trace(const Ray& ray, s32 depth) const
         if (sin2ThetaT >= 1.0f)
         {
             Vector3 reflectDir = ray.Direction - n * (2.0f * ray.Direction.Dot(n));
-            Ray reflectRay(hit.Point + n * (MinHitDistance * 2.0f), reflectDir);
+
+            Ray reflectRay(hit.Point + n * RefractRayBias, reflectDir);
             result += Trace(reflectRay, depth + 1) * surface.Transmission;
         }
         else
         {
             f32 cosThetaT      = std::sqrt(1.0f - sin2ThetaT);
             Vector3 refractDir = (ray.Direction * eta + n * (eta * cosThetaI - cosThetaT)).Normalized();
-            Ray refractRay(hit.Point - n * (MinHitDistance * 2.0f), refractDir);
+
+            Ray refractRay(hit.Point - n * RefractRayBias, refractDir);
             result += Trace(refractRay, depth + 1) * surface.Transmission;
         }
     }
 
-    f32 reflectMagnitude = std::max({ reflectance.X, reflectance.Y, reflectance.Z });
+    f32 reflectMagnitude = std::max(reflectance.X, std::max(reflectance.Y, reflectance.Z));
     if (reflectMagnitude > MinBounceThroughput)
     {
         Vector3 reflectDir = ray.Direction - surface.Normal * (2.0f * ray.Direction.Dot(surface.Normal));
+
         Ray reflectRay(hit.Point + surface.Normal * (MinHitDistance * 2.0f), reflectDir);
         result += Trace(reflectRay, depth + 1) * reflectance;
     }

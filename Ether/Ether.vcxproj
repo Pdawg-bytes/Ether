@@ -188,7 +188,6 @@
     <ClInclude Include="Renderer\Camera.h" />
     <ClInclude Include="Renderer\Raymarcher.h" />
     <ClInclude Include="Renderer\Lighting.h" />
-    <ClInclude Include="Renderer\PointLight.h" />
     <ClInclude Include="Platform\Window.h" />
     <ClInclude Include="Platform\ThreadPool.h" />
   </ItemGroup>

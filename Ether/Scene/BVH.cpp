@@ -1,11 +1,12 @@
 #include "BVH.h"
 
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 namespace
 {
-    constexpr s32 SAHBucketCount = 12;
+    constexpr s32 SAHBucketCount = 16;
     constexpr f32 TraversalCost  = 1.0f;
 
     struct SAHBucket
@@ -25,6 +26,7 @@ namespace
         return std::clamp(bucket, 0, SAHBucketCount - 1);
     }
 }
+
 
 void BVH::Build(std::vector<SceneObject> objects)
 {
@@ -180,6 +182,7 @@ s32 BVH::BuildRecursive(std::vector<s32>& indices, s32 start, s32 end)
     return (s32)_nodes.size() - 1;
 }
 
+
 f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
 {
     f32 bestDistance = std::numeric_limits<f32>::max();
@@ -246,4 +249,65 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
     }
 
     return bestDistance;
+}
+
+
+BVHMetrics BVH::ComputeMetrics() const
+{
+    BVHMetrics metrics;
+    
+    if (_rootIndex < 0)
+        return metrics;
+    
+    s32 maxDepth = 0;
+    s32 totalDepth = 0;
+    s32 nodeCount = 0;
+    
+    ComputeMetricsRecursive(_rootIndex, 0, maxDepth, totalDepth, nodeCount, metrics);
+    
+    metrics.SAHCost       = ComputeSAHCost(_rootIndex);
+    metrics.MaxDepth      = maxDepth;
+    metrics.TotalNodes    = (s32)_nodes.size();
+    metrics.AverageDepth  = (f32)totalDepth / metrics.LeafCount;
+    metrics.BalanceFactor = (f32)maxDepth / (metrics.TotalNodes > 0 ? (s32)std::log2(metrics.TotalNodes) : 1);
+    
+    return metrics;
+}
+
+void BVH::ComputeMetricsRecursive(s32 nodeIndex, s32 depth, s32& maxDepth, s32& totalDepth, s32& nodeCount, BVHMetrics& metrics) const
+{
+    if (nodeIndex < 0)
+        return;
+    
+    const BVHNode& node = _nodes[nodeIndex];
+    nodeCount++;
+    
+    if (node.IsLeaf())
+    {
+        maxDepth = std::max(maxDepth, depth);
+        totalDepth += depth;
+        metrics.LeafCount++;
+    }
+    else
+    {
+        metrics.InternalNodeCount++;
+        ComputeMetricsRecursive(node.Left, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
+        ComputeMetricsRecursive(node.Right, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
+    }
+}
+
+f32 BVH::ComputeSAHCost(s32 nodeIndex) const
+{
+    if (nodeIndex < 0)
+        return 0.0f;
+    
+    const BVHNode& node = _nodes[nodeIndex];
+    
+    if (node.IsLeaf())
+        return node.Bounds.SurfaceArea();
+    
+    f32 leftCost  = ComputeSAHCost(node.Left);
+    f32 rightCost = ComputeSAHCost(node.Right);
+    
+    return 1.0f + leftCost + rightCost;
 }

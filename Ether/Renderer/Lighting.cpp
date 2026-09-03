@@ -7,13 +7,14 @@
 
 namespace
 {
-    constexpr f32 AmbientIntensity   = 0.03f;
-    constexpr f32 ShadowBias		  = 0.001f;
+    constexpr f32 AmbientIntensity     = 0.03f;
+    constexpr f32 ShadowBias		   = 0.001f;
     constexpr f32 ShadowMinHitDistance = 0.0005f;
-    constexpr s32 ShadowMaxSteps	  = 256;
+    constexpr s32 ShadowMaxSteps	   = 64;
+    constexpr f32 MaxTraceDistance     = 100.0f;
 }
 
-void Lighting::AddPointLight(const PointLight& light)
+void Lighting::AddLight(const Light& light)
 {
     _lights.push_back(light);
 }
@@ -57,7 +58,9 @@ f32 Lighting::SoftShadow(const BVH& bvh, const Vector3& origin, const Vector3& d
         if (h < ShadowMinHitDistance)
             return 0.0f;
 
-        res = std::min(res, k * h / t);
+        f32 shadow = std::min(1.0f, k * h / std::max(t, 0.001f));
+        res        = std::min(res, shadow);
+
         t += std::clamp(h, 0.005f, 0.50f);
     }
 
@@ -74,35 +77,48 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
 
     f32 nDotV = std::max(surface.Normal.Dot(viewDir), 0.0f);
 
-    for (const PointLight& light : _lights)
+    for (const Light& light : _lights)
     {
-        Vector3 toLight		= light.Position - surface.Position;
-        f32 distanceSquared = toLight.LengthSquared();
+        Vector3 lightDir;
+        f32 maxT;
+        f32 shadowK;
+        bool isPointLight = (light.Type == LightType::Point);
 
-        if (distanceSquared < 1e-8f)
-            continue;
+        if (isPointLight)
+        {
+            Vector3 toLight		= light.Position - surface.Position;
+            f32 distanceSquared = toLight.LengthSquared();
 
-        f32 distance     = std::sqrt(distanceSquared);
-        Vector3 lightDir = toLight / distance;
+            if (distanceSquared < 1e-8f)
+                continue;
+
+            f32 distance = std::sqrt(distanceSquared);
+            lightDir     = toLight / distance;
+            maxT         = std::max(0.0f, distance - ShadowBias * 2.0f);
+            shadowK      = light.Radius / distance;
+        }
+        else
+        {
+            lightDir = -light.Direction.Normalized();
+            maxT     = MaxTraceDistance;
+            shadowK  = light.Radius;
+        }
 
         f32 nDotL = surface.Normal.Dot(lightDir);
         if (nDotL <= 0.0f)
             continue;
 
         Vector3 shadowOrigin = surface.Position + surface.Normal * ShadowBias;
-        f32 maxT			 = std::max(0.0f, distance - ShadowBias * 2.0f);
-
+        
         f32 shadow = 1.0f;
-
         if (light.Radius <= 0.0f)
         {
             if (IsOccluded(bvh, shadowOrigin, lightDir, maxT))
-                continue;
+                shadow = 0.0f;
         }
         else
         {
-            f32 k = light.Radius / distance;
-            shadow = SoftShadow(bvh, shadowOrigin, lightDir, 0.01f, maxT, k);
+            shadow = SoftShadow(bvh, shadowOrigin, lightDir, 0.01f, maxT, shadowK);
             if (shadow <= 0.001f)
                 continue;
         }
@@ -125,8 +141,17 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
         Vector3 kd		 = (Vector3(1.0f) - F) * (1.0f - surface.Metallic);
         Vector3 diffuse	 = kd * surface.Albedo * (1.0f / Math::PI);
 
-        f32 attenuation	 = light.Intensity / distanceSquared;
-        Vector3 radiance = light.Color * attenuation;
+        Vector3 radiance;
+        if (isPointLight)
+        {
+            f32 distanceSquared = (light.Position - surface.Position).LengthSquared();
+            f32 attenuation     = light.Intensity / distanceSquared;
+            radiance            = light.Color * attenuation;
+        }
+        else
+        {
+            radiance = light.Color * light.Intensity;
+        }
 
         result += (diffuse + specular) * radiance * nDotL * shadow;
     }

@@ -5,34 +5,6 @@
 #include <algorithm>
 #include <cmath>
 
-namespace
-{
-    AABB TransformBounds(const AABB& shapeBounds, const Vector3& position, const Quaternion& rotation, f32 scale)
-    {
-        Vector3 corners[8] =
-        {
-            Vector3(shapeBounds.Min.X, shapeBounds.Min.Y, shapeBounds.Min.Z),
-            Vector3(shapeBounds.Max.X, shapeBounds.Min.Y, shapeBounds.Min.Z),
-            Vector3(shapeBounds.Min.X, shapeBounds.Max.Y, shapeBounds.Min.Z),
-            Vector3(shapeBounds.Max.X, shapeBounds.Max.Y, shapeBounds.Min.Z),
-            Vector3(shapeBounds.Min.X, shapeBounds.Min.Y, shapeBounds.Max.Z),
-            Vector3(shapeBounds.Max.X, shapeBounds.Min.Y, shapeBounds.Max.Z),
-            Vector3(shapeBounds.Min.X, shapeBounds.Max.Y, shapeBounds.Max.Z),
-            Vector3(shapeBounds.Max.X, shapeBounds.Max.Y, shapeBounds.Max.Z),
-        };
-
-        AABB bounds;
-        for (const Vector3& corner : corners)
-        {
-            Vector3 worldCorner = position + rotation.Rotate(corner * scale);
-            bounds.Min			= Vector3::Min(bounds.Min, worldCorner);
-            bounds.Max			= Vector3::Max(bounds.Max, worldCorner);
-        }
-
-        return bounds;
-    }
-}
-
 f32 CSGTree::Distance(const Vector3& localPoint) const
 {
     return EvaluateNode(_rootIndex, localPoint).Distance;
@@ -180,7 +152,7 @@ s32 CSGTreeBuilder::AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc nor
     node.LocalPosition = localPosition;
     node.LocalRotation = localRotation;
     node.LocalScale	   = localScale;
-    node.LocalBounds   = TransformBounds(shapeBounds, localPosition, localRotation, localScale);
+    node.LocalBounds   = Math::TransformBounds(shapeBounds, localPosition, localRotation, localScale);
 
     _nodes.push_back(node);
     return (s32)_nodes.size() - 1;
