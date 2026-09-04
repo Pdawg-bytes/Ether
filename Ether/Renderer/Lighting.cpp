@@ -12,12 +12,16 @@ namespace
     constexpr f32 ShadowMinHitDistance = 0.0005f;
     constexpr s32 ShadowMaxSteps	   = 64;
     constexpr f32 MaxTraceDistance     = 100.0f;
+    constexpr s32 AOSteps              = 3;
+    constexpr f32 AOStepSize           = 0.1f;
+    constexpr f32 AOIntensity          = 2.0f;
 }
 
 void Lighting::AddLight(const Light& light)
 {
     _lights.push_back(light);
 }
+
 
 bool Lighting::IsOccluded(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 maxDistance) const
 {
@@ -43,33 +47,30 @@ bool Lighting::IsOccluded(const BVH& bvh, const Vector3& origin, const Vector3& 
     return false;
 }
 
-f32 Lighting::SoftShadow(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 minT, f32 maxT, f32 k) const
+f32 Lighting::CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const
 {
-    f32 res = 1.0f;
-    f32 t   = minT;
+    f32 occlusion = 0.0f;
+    f32 weight    = 1.0f;
 
-    for (s32 i = 0; i < ShadowMaxSteps && t < maxT; ++i)
+    for (s32 i = 1; i <= AOSteps; ++i)
     {
-        s32 object;
+        f32 stepDist = i * AOStepSize;
+        Vector3 p    = position + normal * stepDist;
 
-        Vector3 p = origin + direction * t;
-        f32 h     = bvh.Distance(p, object);
+        s32 dummyObj;
+        f32 sdfDist = bvh.Distance(p, dummyObj);
 
-        if (h < ShadowMinHitDistance)
-            return 0.0f;
-
-        f32 shadow = std::min(1.0f, k * h / std::max(t, 0.001f));
-        res        = std::min(res, shadow);
-
-        t += std::clamp(h, 0.005f, 0.50f);
+        occlusion += (stepDist - sdfDist) * weight;
+        weight    *= 0.5f;
     }
 
-    return std::clamp(res, 0.0f, 1.0f);
+    return std::clamp(1.0f - (occlusion * AOIntensity), 0.0f, 1.0f);
 }
 
 Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vector3& viewDir) const
 {
-    Vector3 result = surface.Albedo * AmbientIntensity + surface.Emission;
+    f32 ao         = CalculateAO(bvh, surface.Position, surface.Normal);
+    Vector3 result = surface.Albedo * AmbientIntensity * ao + surface.Emission;
 
     Vector3 f0	  = Vector3(0.04f) * (1.0f - surface.Metallic) + surface.Albedo * surface.Metallic;
     f32 roughness = std::clamp(surface.Roughness, 0.03f, 1.0f);
@@ -80,8 +81,7 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
     for (const Light& light : _lights)
     {
         Vector3 lightDir;
-        f32 maxT;
-        f32 shadowK;
+        f32     maxT;
         bool isPointLight = (light.Type == LightType::Point);
 
         if (isPointLight)
@@ -95,13 +95,11 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
             f32 distance = std::sqrt(distanceSquared);
             lightDir     = toLight / distance;
             maxT         = std::max(0.0f, distance - ShadowBias * 2.0f);
-            shadowK      = light.Radius / distance;
         }
         else
         {
             lightDir = -light.Direction.Normalized();
             maxT     = MaxTraceDistance;
-            shadowK  = light.Radius;
         }
 
         f32 nDotL = surface.Normal.Dot(lightDir);
@@ -109,19 +107,7 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
             continue;
 
         Vector3 shadowOrigin = surface.Position + surface.Normal * ShadowBias;
-        
-        f32 shadow = 1.0f;
-        if (light.Radius <= 0.0f)
-        {
-            if (IsOccluded(bvh, shadowOrigin, lightDir, maxT))
-                shadow = 0.0f;
-        }
-        else
-        {
-            shadow = SoftShadow(bvh, shadowOrigin, lightDir, 0.01f, maxT, shadowK);
-            if (shadow <= 0.001f)
-                continue;
-        }
+        f32 shadow           = IsOccluded(bvh, shadowOrigin, lightDir, maxT) ? 0.0f : 1.0f;
 
         Vector3 halfVec = (viewDir + lightDir).Normalized();
         f32 nDotH		= std::max(surface.Normal.Dot(halfVec), 0.0f);

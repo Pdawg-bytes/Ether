@@ -31,6 +31,7 @@ namespace
         s32 Glass;
         s32 Emissive;
         s32 Mirror;
+        s32 Diffuse;
     };
 
     SceneMaterials RegisterMaterials()
@@ -64,6 +65,10 @@ namespace
         mirror.Roughness = 0.2f;
         mirror.Metallic  = 1.0f;
 
+        Material diffuse;
+        diffuse.Albedo    = Vector3(0.45f, 0.40f, 0.15f);
+        diffuse.Roughness = 1.0f;
+
         MaterialLibrary& library = GetMaterialLibrary();
 
         SceneMaterials materials;
@@ -72,8 +77,10 @@ namespace
         materials.Glass    = library.Add(glass);
         materials.Emissive = library.Add(emissive);
         materials.Mirror   = library.Add(mirror);
+        materials.Diffuse  = library.Add(diffuse);
         return materials;
     }
+
 
     std::shared_ptr<CSGTree> BuildPillarTemplate()
     {
@@ -83,10 +90,7 @@ namespace
         s32 cap   = builder.AddSphere(Vector3(0.0f, 3.0f, 0.0f), 0.55f);
         s32 body  = builder.Union(shaft, cap);
 
-        s32 hole = builder.AddCylinder(Vector3(0.0f, 1.5f, 0.0f), Quaternion::Identity, 0.15f, 2.0f);
-        s32 root = builder.Subtraction(body, hole);
-
-        return builder.Build(root);
+        return builder.Build(body);
     }
 
     std::shared_ptr<CSGTree> BuildBlobTemplate()
@@ -178,30 +182,22 @@ namespace
     {
         std::vector<SceneObject> objects;
 
-        objects.push_back(SceneObject::CreatePlane(Vector3::UnitY,  1.0f, materials.Checker));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitY, 1.0f, materials.Checker));
         objects.push_back(SceneObject::CreatePlane(-Vector3::UnitY, 3.0f));
-        objects.push_back(SceneObject::CreatePlane(Vector3::UnitX,  2.0f));
-        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitX, 2.0f));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitX, 2.0f, materials.Diffuse));
+        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitX, 2.0f, materials.Diffuse));
         objects.push_back(SceneObject::CreatePlane(-Vector3::UnitZ, 4.0f));
-        objects.push_back(SceneObject::CreatePlane(Vector3::UnitZ,  3.5f));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitZ, 3.5f));
 
         objects.push_back(SceneObject::CreateBox(
             Vector3(-0.80f, 0.0f, 2.8f),
             Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 4.0f),
             Vector3(0.5f, 1.0f, 0.5f),
             Vector3::One,
-            materials.Metal
+            materials.Diffuse
         ));
 
         objects.push_back(SceneObject::CreateSphere(Vector3(0.75f, -0.35f, 3.15f), 0.55f, Vector3::One, materials.Mirror));
-
-        objects.push_back(SceneObject::CreateBox(
-            Vector3(0.0f, 3.0f, 2.2f),
-            Quaternion::Identity,
-            Vector3(0.5f, 0.01f, 0.5f),
-            Vector3::One,
-            materials.Emissive
-        ));
 
         BVH bvh;
         bvh.Build(std::move(objects));
@@ -211,9 +207,9 @@ namespace
     Lighting BuildLighting()
     {
         Lighting lighting;
-        lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
-        lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
-        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.9f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 2.0f));
+        //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
+        //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
         return lighting;
     }
 }
@@ -225,7 +221,7 @@ s32 main()
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
     SceneMaterials materials = RegisterMaterials();
-    BVH bvh				     = BuildScene(materials);
+    BVH bvh				     = BuildCornellBox(materials);
     Lighting lighting		 = BuildLighting();
 
     Raymarcher raymarcher(camera, bvh, lighting, Width, Height);

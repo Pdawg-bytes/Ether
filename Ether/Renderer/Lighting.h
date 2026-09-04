@@ -60,7 +60,7 @@ public:
 
 private:
     bool IsOccluded(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 maxDistance) const;
-    f32 SoftShadow(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 minT, f32 maxT, f32 k) const;
+    f32  CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const;
 
     std::vector<Light> _lights;
 };
