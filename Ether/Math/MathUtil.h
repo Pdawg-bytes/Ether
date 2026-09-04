@@ -12,7 +12,7 @@ namespace Math
     inline f32 RadToDeg(f32 radians) { return radians * (180.0f / PI); }
     inline f32 Lerp(f32 a, f32 b, f32 t) { return a + (b - a) * t; }
 
-    inline AABB TransformBounds(const AABB& bounds, const Vector3& position, const Quaternion& rotation, f32 scale)
+    inline AABB TransformBounds(const AABB& bounds, const Vector3& position, const Quaternion& rotation, const Vector3& scale)
     {
         Vector3 corners[8] =
         {
@@ -35,5 +35,10 @@ namespace Math
         }
 
         return result;
+    }
+
+    inline AABB TransformBounds(const AABB& bounds, const Vector3& position, const Quaternion& rotation, f32 scale)
+    {
+        return TransformBounds(bounds, position, rotation, Vector3(scale));
     }
 }

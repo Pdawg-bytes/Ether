@@ -5,6 +5,56 @@
 
 namespace SDF
 {
+    PrimitiveDefinition MakeSphere(f32 radius)
+    {
+        PrimitiveDefinition definition;
+        definition.DistanceFunc       = SphereDistance;
+        definition.NormalFunc         = SphereNormal;
+        definition.Data.Sphere.Radius = radius;
+        definition.LocalBounds        = AABB(Vector3(-radius), Vector3(radius));
+
+        return definition;
+    }
+
+    PrimitiveDefinition MakeBox(const Vector3& extents)
+    {
+        PrimitiveDefinition definition;
+        definition.DistanceFunc     = BoxDistance;
+        definition.NormalFunc       = BoxNormal;
+        definition.Data.Box.Extents = extents;
+        definition.LocalBounds      = AABB(-extents, extents);
+
+        return definition;
+    }
+
+    PrimitiveDefinition MakeTorus(f32 majorRadius, f32 minorRadius)
+    {
+        PrimitiveDefinition definition;
+        definition.DistanceFunc           = TorusDistance;
+        definition.NormalFunc             = TorusNormal;
+        definition.Data.Torus.MajorRadius = majorRadius;
+        definition.Data.Torus.MinorRadius = minorRadius;
+
+        f32 outerRadius        = majorRadius + minorRadius;
+        definition.LocalBounds = AABB(Vector3(-outerRadius, -minorRadius, -outerRadius), Vector3(outerRadius, minorRadius, outerRadius));
+
+        return definition;
+    }
+
+    PrimitiveDefinition MakeCylinder(f32 radius, f32 halfHeight)
+    {
+        PrimitiveDefinition definition;
+        definition.DistanceFunc             = CylinderDistance;
+        definition.NormalFunc               = CylinderNormal;
+        definition.Data.Cylinder.Radius     = radius;
+        definition.Data.Cylinder.HalfHeight = halfHeight;
+        definition.LocalBounds              = AABB(Vector3(-radius, -halfHeight, -radius), Vector3(radius, halfHeight, radius));
+
+        return definition;
+    }
+
+
+
     f32 SphereDistance(const PrimitiveData& data, const Vector3& localPoint)
     {
         return localPoint.Length() - data.Sphere.Radius;

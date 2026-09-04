@@ -27,6 +27,9 @@ namespace
     struct SceneMaterials
     {
         s32 Checker;
+        s32 White;
+        s32 Red;
+        s32 Green;
         s32 Metal;
         s32 Glass;
         s32 Emissive;
@@ -69,10 +72,25 @@ namespace
         diffuse.Albedo    = Vector3(0.45f, 0.40f, 0.15f);
         diffuse.Roughness = 1.0f;
 
+        Material white;
+        white.Albedo    = Vector3(0.75f);
+        white.Roughness = 1.0f;
+
+        Material red;
+        red.Albedo    = Vector3(0.65f, 0.05f, 0.04f);
+        red.Roughness = 1.0f;
+
+        Material green;
+        green.Albedo    = Vector3(0.05f, 0.55f, 0.08f);
+        green.Roughness = 1.0f;
+
         MaterialLibrary& library = GetMaterialLibrary();
 
         SceneMaterials materials;
         materials.Checker  = library.Add(checker);
+        materials.White    = library.Add(white);
+        materials.Red      = library.Add(red);
+        materials.Green    = library.Add(green);
         materials.Metal    = library.Add(metal);
         materials.Glass    = library.Add(glass);
         materials.Emissive = library.Add(emissive);
@@ -86,8 +104,8 @@ namespace
     {
         CSGTreeBuilder builder;
 
-        s32 shaft = builder.AddBox(Vector3(0.0f, 1.5f, 0.0f), Quaternion::Identity, Vector3(0.4f, 1.5f, 0.4f));
-        s32 cap   = builder.AddSphere(Vector3(0.0f, 3.0f, 0.0f), 0.55f);
+        s32 shaft = builder.Add(SceneObject::CreateBox(Vector3(0.0f, 1.5f, 0.0f), Quaternion::Identity, Vector3(0.4f, 1.5f, 0.4f)));
+        s32 cap   = builder.Add(SceneObject::CreateSphere(Vector3(0.0f, 3.0f, 0.0f), 0.55f));
         s32 body  = builder.Union(shaft, cap);
 
         return builder.Build(body);
@@ -99,9 +117,9 @@ namespace
 
         CSGTreeBuilder builder;
 
-        s32 a = builder.AddSphere(Vector3(0.0f, 0.0f, 0.0f), 0.6f);
-        s32 b = builder.AddSphere(Vector3(0.7f, 0.3f, 0.2f), 0.45f);
-        s32 c = builder.AddSphere(Vector3(-0.5f, 0.45f, -0.3f), 0.5f);
+        s32 a = builder.Add(SceneObject::CreateSphere(Vector3(0.0f, 0.0f, 0.0f), 0.6f));
+        s32 b = builder.Add(SceneObject::CreateSphere(Vector3(0.7f, 0.3f, 0.2f), 0.45f));
+        s32 c = builder.Add(SceneObject::CreateSphere(Vector3(-0.5f, 0.45f, -0.3f), 0.5f));
 
         s32 ab   = builder.SmoothUnion(a, b, Blend);
         s32 root = builder.SmoothUnion(ab, c, Blend);
@@ -115,7 +133,7 @@ namespace
 
         CSGTreeBuilder builder;
 
-        s32 ring = builder.AddTorus(Vector3::Zero, Quaternion::Identity, 1.0f, 0.22f, 1.0f, ringMaterial);
+        s32 ring = builder.Add(SceneObject::CreateTorus(Vector3::Zero, Quaternion::Identity, 1.0f, 0.22f, 1.0f, ringMaterial));
 
         s32 root = ring;
         for (s32 i = 0; i < ToothCount; i++)
@@ -124,11 +142,11 @@ namespace
             Quaternion rotation = Quaternion::FromAxisAngle(Vector3::UnitY, angle);
             Vector3 position    = rotation.Rotate(Vector3(0.0f, 0.0f, 1.0f));
 
-            s32 tooth = builder.AddBox(position, rotation, Vector3(0.15f, 0.15f, 0.35f), 1.0f, toothMaterial);
+            s32 tooth = builder.Add(SceneObject::CreateBox(position, rotation, Vector3(0.15f, 0.15f, 0.35f), Vector3(1.0f), toothMaterial));
             root	  = builder.Union(root, tooth);
         }
 
-        s32 axleHole = builder.AddCylinder(Vector3::Zero, Quaternion::Identity, 0.3f, 1.0f);
+        s32 axleHole = builder.Add(SceneObject::CreateCylinder(Vector3::Zero, Quaternion::Identity, 0.3f, 1.0f));
         root		 = builder.Subtraction(root, axleHole);
 
         return builder.Build(root);
@@ -182,19 +200,19 @@ namespace
     {
         std::vector<SceneObject> objects;
 
-        objects.push_back(SceneObject::CreatePlane( Vector3::UnitY, 1.0f, materials.Checker));
-        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitY, 3.0f));
-        objects.push_back(SceneObject::CreatePlane( Vector3::UnitX, 2.0f, materials.Diffuse));
-        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitX, 2.0f, materials.Diffuse));
-        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitZ, 4.0f));
-        objects.push_back(SceneObject::CreatePlane( Vector3::UnitZ, 3.5f));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitY, 1.0f, materials.White));
+        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitY, 3.0f, materials.White));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitX, 2.0f, materials.Red));
+        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitX, 2.0f, materials.Green));
+        objects.push_back(SceneObject::CreatePlane(-Vector3::UnitZ, 4.0f, materials.White));
+        objects.push_back(SceneObject::CreatePlane( Vector3::UnitZ, 3.5f, materials.White));
 
         objects.push_back(SceneObject::CreateBox(
             Vector3(-0.80f, 0.0f, 2.8f),
             Quaternion::FromAxisAngle(Vector3::UnitY, Math::PI / 4.0f),
             Vector3(0.5f, 1.0f, 0.5f),
             Vector3::One,
-            materials.Diffuse
+            materials.White
         ));
 
         objects.push_back(SceneObject::CreateSphere(Vector3(0.75f, -0.35f, 3.15f), 0.55f, Vector3::One, materials.Mirror));
@@ -207,9 +225,9 @@ namespace
     Lighting BuildLighting()
     {
         Lighting lighting;
-        //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
-        //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
-        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
+        lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
+        lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
+        //lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
         return lighting;
     }
 }
@@ -221,7 +239,7 @@ s32 main()
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
     SceneMaterials materials = RegisterMaterials();
-    BVH bvh				     = BuildCornellBox(materials);
+    BVH bvh				     = BuildScene(materials);
     Lighting lighting		 = BuildLighting();
 
     Raymarcher raymarcher(camera, bvh, lighting, Width, Height);

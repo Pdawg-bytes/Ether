@@ -31,8 +31,12 @@ struct SceneObject
     Vector3 Normal(const Vector3& worldPoint) const;
     s32 ResolveMaterialIndex(const Vector3& worldPoint) const;
 
+    static SceneObject CreatePrimitive(const PrimitiveDefinition& definition, const Vector3& position,
+                                       const Quaternion& rotation = Quaternion::Identity, const Vector3& scale = Vector3(1.0f), s32 materialIndex = -1);
     static SceneObject CreateSphere(const Vector3& position, f32 radius, const Vector3& scale = Vector3(1.0f), s32 materialIndex = -1);
     static SceneObject CreateBox(const Vector3& position, const Quaternion& rotation, const Vector3& extents, const Vector3& scale = Vector3(1.0f), s32 materialIndex = -1);
+    static SceneObject CreateTorus(const Vector3& position, const Quaternion& rotation, f32 majorRadius, f32 minorRadius, f32 scale = 1.0f, s32 materialIndex = -1);
+    static SceneObject CreateCylinder(const Vector3& position, const Quaternion& rotation, f32 radius, f32 halfHeight, f32 scale = 1.0f, s32 materialIndex = -1);
     static SceneObject CreatePlane(const Vector3& normal, f32 distance, s32 materialIndex = -1);
     static SceneObject CreateFromTemplate(std::shared_ptr<CSGTree> tmpl, const Vector3& position, const Quaternion& rotation = Quaternion::Identity, const Vector3& scale = Vector3(1.0f), s32 materialIndex = -1);
 

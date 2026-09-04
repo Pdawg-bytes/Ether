@@ -23,8 +23,9 @@ Vector3 CSGTree::Normal(const Vector3& localPoint) const
     if (!eval.Smooth)
     {
         const CSGNode& leaf = _nodes[eval.LeafIndex];
-        Vector3 p			= leaf.LocalRotation.Conjugate().Rotate(localPoint - leaf.LocalPosition) * (1.0f / leaf.LocalScale);
+        Vector3 p			= leaf.LocalRotation.Conjugate().Rotate(localPoint - leaf.LocalPosition) / leaf.LocalScale;
         Vector3 normal		= leaf.NormalFunc(leaf.Data, p);
+		normal = (normal / leaf.LocalScale).Normalized();
 
         if (eval.Negated)
             normal = -normal;
@@ -54,8 +55,9 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 
     if (node.Operation == CSGOperation::Primitive)
     {
-        Vector3 p = node.LocalRotation.Conjugate().Rotate(localPoint - node.LocalPosition) * (1.0f / node.LocalScale);
-        f32 d	  = node.DistanceFunc(node.Data, p) * node.LocalScale;
+        Vector3 p = node.LocalRotation.Conjugate().Rotate(localPoint - node.LocalPosition) / node.LocalScale;
+        f32 minScale = std::min(node.LocalScale.X, std::min(node.LocalScale.Y, node.LocalScale.Z));
+        f32 d	  = node.DistanceFunc(node.Data, p) * minScale;
 
         return { d, nodeIndex, false, false };
     }
@@ -140,61 +142,29 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
     }
 }
 
-s32 CSGTreeBuilder::AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc normalFunc, const PrimitiveData& data,
-                                  const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds, s32 materialIndex)
+s32 CSGTreeBuilder::AddPrimitiveNode(const SceneObject& object)
 {
     CSGNode node;
     node.Operation	   = CSGOperation::Primitive;
-    node.DistanceFunc  = distanceFunc;
-    node.NormalFunc	   = normalFunc;
-    node.Data		   = data;
-    node.MaterialIndex = materialIndex;
-    node.LocalPosition = localPosition;
-    node.LocalRotation = localRotation;
-    node.LocalScale	   = localScale;
-    node.LocalBounds   = Math::TransformBounds(shapeBounds, localPosition, localRotation, localScale);
+    node.DistanceFunc  = object.DistanceFunc;
+    node.NormalFunc	   = object.NormalFunc;
+    node.Data		   = object.Data;
+    node.MaterialIndex = object.MaterialIndex;
+    node.LocalPosition = object.Position;
+    node.LocalRotation = object.Rotation;
+    node.LocalScale	   = object.Scale;
+    node.LocalBounds   = object.WorldBounds;
 
     _nodes.push_back(node);
     return (s32)_nodes.size() - 1;
 }
 
-s32 CSGTreeBuilder::AddSphere(const Vector3& localPosition, f32 radius, f32 localScale, s32 materialIndex)
+s32 CSGTreeBuilder::Add(const SceneObject& object)
 {
-    PrimitiveData data{};
-    data.Sphere.Radius = radius;
+    if (object.Template || !object.IsBounded || !object.DistanceFunc || !object.NormalFunc)
+        return -1;
 
-    AABB shapeBounds(Vector3(-radius), Vector3(radius));
-    return AddPrimitive(SDF::SphereDistance, SDF::SphereNormal, data, localPosition, Quaternion::Identity, localScale, shapeBounds, materialIndex);
-}
-
-s32 CSGTreeBuilder::AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale, s32 materialIndex)
-{
-    PrimitiveData data{};
-    data.Box.Extents = extents;
-
-    AABB shapeBounds(-extents, extents);
-    return AddPrimitive(SDF::BoxDistance, SDF::BoxNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
-}
-
-s32 CSGTreeBuilder::AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale, s32 materialIndex)
-{
-    PrimitiveData data{};
-    data.Torus.MajorRadius = majorRadius;
-    data.Torus.MinorRadius = minorRadius;
-
-    f32 outerRadius = majorRadius + minorRadius;
-    AABB shapeBounds(Vector3(-outerRadius, -minorRadius, -outerRadius), Vector3(outerRadius, minorRadius, outerRadius));
-    return AddPrimitive(SDF::TorusDistance, SDF::TorusNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
-}
-
-s32 CSGTreeBuilder::AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale, s32 materialIndex)
-{
-    PrimitiveData data{};
-    data.Cylinder.Radius	 = radius;
-    data.Cylinder.HalfHeight = halfHeight;
-
-    AABB shapeBounds(Vector3(-radius, -halfHeight, -radius), Vector3(radius, halfHeight, radius));
-    return AddPrimitive(SDF::CylinderDistance, SDF::CylinderNormal, data, localPosition, localRotation, localScale, shapeBounds, materialIndex);
+    return AddPrimitiveNode(object);
 }
 
 s32 CSGTreeBuilder::AddOp(CSGOperation operation, s32 left, s32 right, f32 smoothing)

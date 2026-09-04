@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/Vector3.h"
+#include "../Math/AABB.h"
 
 namespace SDF
 {
@@ -23,8 +24,21 @@ union PrimitiveData
 using SDFDistanceFunc = f32(*)(const PrimitiveData& data, const Vector3& localPoint);
 using SDFNormalFunc   = Vector3(*)(const PrimitiveData& data, const Vector3& localPoint);
 
+struct PrimitiveDefinition
+{
+    SDFDistanceFunc DistanceFunc = nullptr;
+    SDFNormalFunc NormalFunc = nullptr;
+    PrimitiveData Data{};
+    AABB LocalBounds;
+};
+
 namespace SDF
 {
+    PrimitiveDefinition MakeSphere(f32 radius);
+    PrimitiveDefinition MakeBox(const Vector3& extents);
+    PrimitiveDefinition MakeTorus(f32 majorRadius, f32 minorRadius);
+    PrimitiveDefinition MakeCylinder(f32 radius, f32 halfHeight);
+
     f32 SphereDistance(const PrimitiveData& data, const Vector3& localPoint);
     Vector3 SphereNormal(const PrimitiveData& data, const Vector3& localPoint);
 

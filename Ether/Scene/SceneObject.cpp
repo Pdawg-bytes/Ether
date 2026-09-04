@@ -54,33 +54,40 @@ void SceneObject::UpdateWorldBounds(const AABB& localBounds)
 }
 
 
-SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, const Vector3& scale, s32 materialIndex)
+SceneObject SceneObject::CreatePrimitive(const PrimitiveDefinition& definition, const Vector3& position, const Quaternion& rotation, const Vector3& scale, s32 materialIndex)
 {
     SceneObject object;
-    object.Position			  = position;
-    object.Scale		      = scale;
-    object.DistanceFunc		  = SDF::SphereDistance;
-    object.NormalFunc		  = SDF::SphereNormal;
-    object.Data.Sphere.Radius = radius;
-    object.MaterialIndex	  = materialIndex;
+    object.Position      = position;
+    object.Rotation      = rotation;
+    object.Scale         = scale;
+    object.DistanceFunc  = definition.DistanceFunc;
+    object.NormalFunc    = definition.NormalFunc;
+    object.Data          = definition.Data;
+    object.MaterialIndex = materialIndex;
 
-    object.UpdateWorldBounds(AABB(Vector3(-radius), Vector3(radius)));
+    object.UpdateWorldBounds(definition.LocalBounds);
+
     return object;
+}
+
+SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, const Vector3& scale, s32 materialIndex)
+{
+    return CreatePrimitive(SDF::MakeSphere(radius), position, Quaternion::Identity, scale, materialIndex);
 }
 
 SceneObject SceneObject::CreateBox(const Vector3& position, const Quaternion& rotation, const Vector3& extents, const Vector3& scale, s32 materialIndex)
 {
-    SceneObject object;
-    object.Position			= position;
-    object.Rotation			= rotation;
-    object.Scale            = scale;
-    object.DistanceFunc		= SDF::BoxDistance;
-    object.NormalFunc		= SDF::BoxNormal;
-    object.Data.Box.Extents = extents;
-    object.MaterialIndex	= materialIndex;
+    return CreatePrimitive(SDF::MakeBox(extents), position, rotation, scale, materialIndex);
+}
 
-    object.UpdateWorldBounds(AABB(-extents, extents));
-    return object;
+SceneObject SceneObject::CreateTorus(const Vector3& position, const Quaternion& rotation, f32 majorRadius, f32 minorRadius, f32 scale, s32 materialIndex)
+{
+    return CreatePrimitive(SDF::MakeTorus(majorRadius, minorRadius), position, rotation, Vector3(scale), materialIndex);
+}
+
+SceneObject SceneObject::CreateCylinder(const Vector3& position, const Quaternion& rotation, f32 radius, f32 halfHeight, f32 scale, s32 materialIndex)
+{
+    return CreatePrimitive(SDF::MakeCylinder(radius, halfHeight), position, rotation, Vector3(scale), materialIndex);
 }
 
 SceneObject SceneObject::CreatePlane(const Vector3& normal, f32 distance, s32 materialIndex)

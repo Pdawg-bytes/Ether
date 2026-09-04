@@ -3,6 +3,7 @@
 #include "../Math/Vector3.h"
 #include "../Math/Quaternion.h"
 #include "../Math/AABB.h"
+#include "SceneObject.h"
 #include "SDFPrimitives.h"
 
 #include <memory>
@@ -37,7 +38,7 @@ struct CSGNode
     Vector3 LocalPosition;
 
     Quaternion LocalRotation = Quaternion::Identity;
-    f32 LocalScale			 = 1.0f;
+    Vector3 LocalScale	     = Vector3(1.0f);
 
     AABB LocalBounds;
 };
@@ -71,10 +72,7 @@ private:
 class CSGTreeBuilder
 {
 public:
-    s32 AddSphere(const Vector3& localPosition, f32 radius, f32 localScale = 1.0f, s32 materialIndex = -1);
-    s32 AddBox(const Vector3& localPosition, const Quaternion& localRotation, const Vector3& extents, f32 localScale = 1.0f, s32 materialIndex = -1);
-    s32 AddTorus(const Vector3& localPosition, const Quaternion& localRotation, f32 majorRadius, f32 minorRadius, f32 localScale = 1.0f, s32 materialIndex = -1);
-    s32 AddCylinder(const Vector3& localPosition, const Quaternion& localRotation, f32 radius, f32 halfHeight, f32 localScale = 1.0f, s32 materialIndex = -1);
+    s32 Add(const SceneObject& object);
 
     s32 Union(s32 left, s32 right);
     s32 Subtraction(s32 left, s32 right);
@@ -86,8 +84,7 @@ public:
     std::shared_ptr<CSGTree> Build(s32 rootNode);
 
 private:
-    s32 AddPrimitive(SDFDistanceFunc distanceFunc, SDFNormalFunc normalFunc, const PrimitiveData& data,
-                     const Vector3& localPosition, const Quaternion& localRotation, f32 localScale, const AABB& shapeBounds, s32 materialIndex);
+    s32 AddPrimitiveNode(const SceneObject& object);
     s32 AddOp(CSGOperation operation, s32 left, s32 right, f32 smoothing);
 
     std::vector<CSGNode> _nodes;
