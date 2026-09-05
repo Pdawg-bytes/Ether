@@ -29,7 +29,7 @@ struct CSGNode
     s32 Right = -1;
 
     SDFDistanceFunc DistanceFunc = nullptr;
-    SDFNormalFunc NormalFunc     = nullptr;
+    SDFNormalFunc   NormalFunc   = nullptr;
 
     PrimitiveData Data{};
 
@@ -38,9 +38,18 @@ struct CSGNode
     Vector3 LocalPosition;
 
     Quaternion LocalRotation = Quaternion::Identity;
-    Vector3 LocalScale	     = Vector3(1.0f);
+    Vector3    LocalScale	 = Vector3(1.0f);
+    Vector3    InvLocalScale = Vector3(1.0f);
+    f32        MinLocalScale = 1e-4f;
 
     AABB LocalBounds;
+
+    void SetLocalScale(const Vector3& scale)
+    {
+        LocalScale    = scale;
+        InvLocalScale = Vector3(1.0f / scale.X, 1.0f / scale.Y, 1.0f / scale.Z);
+        MinLocalScale = std::min(scale.X, std::min(scale.Y, scale.Z));
+    }
 };
 
 class CSGTree

@@ -185,8 +185,9 @@ s32 BVH::BuildRecursive(std::vector<s32>& indices, s32 start, s32 end)
 
 f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
 {
-    f32 bestDistance = std::numeric_limits<f32>::max();
-    hitObjectIndex   = -1;
+    f32 bestDistance   = std::numeric_limits<f32>::max();
+    f32 bestDistanceSq = bestDistance;
+    hitObjectIndex     = -1;
 
     for (s32 unboundedIndex : _unboundedIndices)
     {
@@ -194,6 +195,7 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
         if (distance < bestDistance)
         {
             bestDistance   = distance;
+            bestDistanceSq = bestDistance * bestDistance;
             hitObjectIndex = unboundedIndex;
         }
     }
@@ -201,29 +203,32 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
     if (_rootIndex < 0)
         return bestDistance;
 
-    s32 stack[64]	   = {};
-    s32 stackSize	   = 0;
+    s32 stack[64];
+    s32 stackSize      = 0;
     stack[stackSize++] = _rootIndex;
 
     while (stackSize > 0)
     {
         const BVHNode& node = _nodes[stack[--stackSize]];
 
-        if (node.Bounds.DistanceSquared(worldPoint) > bestDistance * bestDistance)
+        if (node.Bounds.DistanceSquared(worldPoint) > bestDistanceSq)
             continue;
 
         if (node.IsLeaf())
         {
             const SceneObject& object = _objects[node.ObjectIndex];
 
-            f32 sphereDistance = (worldPoint - object.Position).Length() - object.BoundingRadius;
-            if (sphereDistance > bestDistance)
+            f32 boundRadiusSum = bestDistance + object.BoundingRadius;
+
+            if (boundRadiusSum > 0.0f &&
+                (worldPoint - object.Position).LengthSquared() > boundRadiusSum * boundRadiusSum)
                 continue;
 
             f32 distance = object.Distance(worldPoint);
             if (distance < bestDistance)
             {
                 bestDistance   = distance;
+                bestDistanceSq = bestDistance * bestDistance;
                 hitObjectIndex = node.ObjectIndex;
             }
         }

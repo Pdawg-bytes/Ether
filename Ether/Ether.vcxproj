@@ -144,8 +144,7 @@
       <LanguageStandard>stdcpp20</LanguageStandard>
       <ForcedIncludeFiles>$(ProjectDir)GlobalTypes.h</ForcedIncludeFiles>
       <Optimization>Full</Optimization>
-      <AdditionalOptions>/clang:-fno-tree-vectorize
- %(AdditionalOptions)</AdditionalOptions>
+      <AdditionalOptions>/clang:-fno-tree-vectorize %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>

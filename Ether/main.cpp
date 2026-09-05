@@ -19,8 +19,8 @@
 
 namespace
 {
-    constexpr u32 Width			   = 200;
-    constexpr u32 Height		   = 120;
+    constexpr u32 Width			   = 100;
+    constexpr u32 Height		   = 60;
     constexpr f32 MoveSpeed		   = 3.5f;
     constexpr f32 MouseSensitivity = 0.15f;
 
@@ -225,9 +225,9 @@ namespace
     Lighting BuildLighting()
     {
         Lighting lighting;
-        lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
-        lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
-        //lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
+        //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
+        //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
         return lighting;
     }
 }
@@ -239,7 +239,7 @@ s32 main()
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
     SceneMaterials materials = RegisterMaterials();
-    BVH bvh				     = BuildScene(materials);
+    BVH bvh				     = BuildCornellBox(materials);
     Lighting lighting		 = BuildLighting();
 
     Raymarcher raymarcher(camera, bvh, lighting, Width, Height);

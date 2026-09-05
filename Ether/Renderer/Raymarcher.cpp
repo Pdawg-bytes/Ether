@@ -14,7 +14,7 @@ namespace
     constexpr f32 MinHitDistance      = 0.0001f;
     constexpr f32 RefractRayBias      = 0.001f;
     constexpr f32 MaxTraceDistance    = 100.0f;
-    constexpr s32 MaxBounces          = 4;
+    constexpr s32 MaxBounces          = 2;
     constexpr f32 MinBounceThroughput = 0.02f;
     constexpr usize GammaTableSize    = 4096;
 

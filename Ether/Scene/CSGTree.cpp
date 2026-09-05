@@ -25,7 +25,7 @@ Vector3 CSGTree::Normal(const Vector3& localPoint) const
         const CSGNode& leaf = _nodes[eval.LeafIndex];
         Vector3 p			= leaf.LocalRotation.Conjugate().Rotate(localPoint - leaf.LocalPosition) / leaf.LocalScale;
         Vector3 normal		= leaf.NormalFunc(leaf.Data, p);
-		normal = (normal / leaf.LocalScale).Normalized();
+		normal              = (normal / leaf.LocalScale).Normalized();
 
         if (eval.Negated)
             normal = -normal;
@@ -55,9 +55,8 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
 
     if (node.Operation == CSGOperation::Primitive)
     {
-        Vector3 p = node.LocalRotation.Conjugate().Rotate(localPoint - node.LocalPosition) / node.LocalScale;
-        f32 minScale = std::min(node.LocalScale.X, std::min(node.LocalScale.Y, node.LocalScale.Z));
-        f32 d	  = node.DistanceFunc(node.Data, p) * minScale;
+        Vector3 p = node.LocalRotation.Conjugate().Rotate(localPoint - node.LocalPosition) * node.InvLocalScale;
+        f32 d     = node.DistanceFunc(node.Data, p) * node.MinLocalScale;
 
         return { d, nodeIndex, false, false };
     }
@@ -77,6 +76,7 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
                 return a;
 
             CSGEval b = EvaluateNode(node.Right, localPoint);
+
             return a.Distance <= b.Distance ? a : b;
         }
         else
@@ -86,59 +86,68 @@ CSGTree::CSGEval CSGTree::EvaluateNode(s32 nodeIndex, const Vector3& localPoint)
                 return b;
 
             CSGEval a = EvaluateNode(node.Left, localPoint);
+
             return a.Distance <= b.Distance ? a : b;
         }
     }
 
+    if (node.Operation == CSGOperation::Subtraction)
+    {
+        const CSGNode& right = _nodes[node.Right];
+        f32 rightBoundDistSq = right.LocalBounds.DistanceSquared(localPoint);
+
+        CSGEval a = EvaluateNode(node.Left, localPoint);
+
+        if (rightBoundDistSq > 0.0f && (a.Distance >= 0.0f || rightBoundDistSq >= a.Distance * a.Distance))
+            return a;
+
+        CSGEval b = EvaluateNode(node.Right, localPoint);
+        f32 negB  = -b.Distance;
+
+        if (a.Distance >= negB)
+            return a;
+
+        return { negB, b.LeafIndex, !b.Negated, b.Smooth };
+    }
+
     CSGEval a = EvaluateNode(node.Left, localPoint);
     CSGEval b = EvaluateNode(node.Right, localPoint);
-    f32 k	  = node.Smoothing;
+    f32 k     = node.Smoothing;
 
     switch (node.Operation)
     {
-        case CSGOperation::Subtraction:
-        {
-            f32 negB = -b.Distance;
-            if (a.Distance >= negB)
-                return a;
+    case CSGOperation::Intersection:
+        return a.Distance >= b.Distance ? a : b;
 
-            return { negB, b.LeafIndex, !b.Negated, b.Smooth };
-        }
+    case CSGOperation::SmoothUnion:
+    {
+        f32 h        = std::clamp(0.5f + 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
+        f32 distance = Math::Lerp(b.Distance, a.Distance, h) - k * h * (1.0f - h);
 
-        case CSGOperation::Intersection:
-            return a.Distance >= b.Distance ? a : b;
+        const CSGEval& nearest = a.Distance <= b.Distance ? a : b;
+        return { distance, nearest.LeafIndex, nearest.Negated, true };
+    }
 
-        case CSGOperation::SmoothUnion:
-        {
-            f32 h	     = std::clamp(0.5f + 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
-            f32 distance = Math::Lerp(b.Distance, a.Distance, h) - k * h * (1.0f - h);
+    case CSGOperation::SmoothSubtraction:
+    {
+        f32 h        = std::clamp(0.5f - 0.5f * (a.Distance + b.Distance) / k, 0.0f, 1.0f);
+        f32 distance = Math::Lerp(a.Distance, -b.Distance, h) + k * h * (1.0f - h);
+        bool useB    = a.Distance < -b.Distance;
 
-            const CSGEval& nearest = a.Distance <= b.Distance ? a : b;
+        return { distance, useB ? b.LeafIndex : a.LeafIndex, useB ? !b.Negated : a.Negated, true };
+    }
 
-            return { distance, nearest.LeafIndex, nearest.Negated, true };
-        }
+    case CSGOperation::SmoothIntersection:
+    {
+        f32 h        = std::clamp(0.5f - 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
+        f32 distance = Math::Lerp(b.Distance, a.Distance, h) + k * h * (1.0f - h);
 
-        case CSGOperation::SmoothSubtraction:
-        {
-            f32 h	     = std::clamp(0.5f - 0.5f * (a.Distance + b.Distance) / k, 0.0f, 1.0f);
-            f32 distance = Math::Lerp(a.Distance, -b.Distance, h) + k * h * (1.0f - h);
-            bool useB    = a.Distance < -b.Distance;
+        const CSGEval& nearest = a.Distance >= b.Distance ? a : b;
+        return { distance, nearest.LeafIndex, nearest.Negated, true };
+    }
 
-            return { distance, useB ? b.LeafIndex : a.LeafIndex, useB ? !b.Negated : a.Negated, true };
-        }
-
-        case CSGOperation::SmoothIntersection:
-        {
-            f32 h	     = std::clamp(0.5f - 0.5f * (b.Distance - a.Distance) / k, 0.0f, 1.0f);
-            f32 distance = Math::Lerp(b.Distance, a.Distance, h) + k * h * (1.0f - h);
-
-            const CSGEval& nearest = a.Distance >= b.Distance ? a : b;
-
-            return { distance, nearest.LeafIndex, nearest.Negated, true };
-        }
-
-        default:
-            return a;
+    default:
+        return a;
     }
 }
 
@@ -152,8 +161,9 @@ s32 CSGTreeBuilder::AddPrimitiveNode(const SceneObject& object)
     node.MaterialIndex = object.MaterialIndex;
     node.LocalPosition = object.Position;
     node.LocalRotation = object.Rotation;
-    node.LocalScale	   = object.Scale;
     node.LocalBounds   = object.WorldBounds;
+
+    node.SetLocalScale(object.Scale);
 
     _nodes.push_back(node);
     return (s32)_nodes.size() - 1;
