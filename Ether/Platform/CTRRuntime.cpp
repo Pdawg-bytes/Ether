@@ -13,16 +13,16 @@ namespace
     constexpr s16 CircleDeadZone  = 10;
     constexpr f32 CircleLookScale = 12.0f / 156.0f;
 
-    struct NitroRuntime
+    struct CTRRuntime
     {
-        NitroRuntime(u32 width, u32 height)
+        CTRRuntime(u32 width, u32 height)
             : renderWidth(width), renderHeight(height), scale(ScreenHeight / height)
         {
             gfxInitDefault();
             gfxSetDoubleBuffering(GFX_TOP, false);
         }
 
-        ~NitroRuntime()
+        ~CTRRuntime()
         {
             gfxExit();
         }
@@ -34,7 +34,7 @@ namespace
         circlePosition circlePad{};
     };
 
-    void BlitNearest(const NitroRuntime& runtime, const u32* source, u8* destination)
+    void BlitNearest(const CTRRuntime& runtime, const u32* source, u8* destination)
     {
         u32 imageWidth  = runtime.renderWidth * runtime.scale;
         u32 imageHeight = runtime.renderHeight * runtime.scale;
@@ -70,19 +70,19 @@ namespace
 namespace Platform
 {
     Runtime::Runtime(u32 width, u32 height, const char*)
-        : _implementation(new NitroRuntime(width, height))
+        : _implementation(new CTRRuntime(width, height))
     {
     }
 
     Runtime::~Runtime()
     {
-        delete static_cast<NitroRuntime*>(_implementation);
+        delete static_cast<CTRRuntime*>(_implementation);
     }
 
     bool Runtime::PollEvents()
     {
         hidScanInput();
-        NitroRuntime* runtime = static_cast<NitroRuntime*>(_implementation);
+        CTRRuntime* runtime = static_cast<CTRRuntime*>(_implementation);
         runtime->heldKeys     = hidKeysHeld();
 
         hidCircleRead(&runtime->circlePad);
@@ -91,7 +91,7 @@ namespace Platform
 
     bool Runtime::IsKeyDown(Key key) const
     {
-        const NitroRuntime* runtime = static_cast<const NitroRuntime*>(_implementation);
+        const CTRRuntime* runtime = static_cast<const CTRRuntime*>(_implementation);
         const bool circlePadActive = runtime->circlePad.dx > CircleDeadZone ||
             runtime->circlePad.dx < -CircleDeadZone ||
             runtime->circlePad.dy > CircleDeadZone  ||
@@ -117,7 +117,7 @@ namespace Platform
 
     void Runtime::GetLookDelta(f32& outX, f32& outY)
     {
-        const NitroRuntime* runtime = static_cast<const NitroRuntime*>(_implementation);
+        const CTRRuntime* runtime = static_cast<const CTRRuntime*>(_implementation);
 
         outX = runtime->circlePad.dx > CircleDeadZone || runtime->circlePad.dx < -CircleDeadZone
             ? runtime->circlePad.dx * CircleLookScale
@@ -130,7 +130,7 @@ namespace Platform
 
     void Runtime::Present(const u32* framebuffer, const Camera*, const BVH*)
     {
-        NitroRuntime* runtime = static_cast<NitroRuntime*>(_implementation);
+        CTRRuntime* runtime = static_cast<CTRRuntime*>(_implementation);
         u8* screen            = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, nullptr, nullptr);
 
         BlitNearest(*runtime, framebuffer, screen);

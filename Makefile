@@ -25,7 +25,7 @@ LIBPATHS        := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 CPPFILES        := main.cpp Camera.cpp Lighting.cpp Raymarcher.cpp \
 			BVH.cpp CSGTree.cpp Material.cpp MaterialLibrary.cpp SceneObject.cpp \
-			SDFPrimitives.cpp Texture.cpp NitroRuntime.cpp
+			SDFPrimitives.cpp Texture.cpp CTRRuntime.cpp
 VPATH           := $(TOPDIR)/Ether $(TOPDIR)/Ether/Renderer $(TOPDIR)/Ether/Scene $(TOPDIR)/Ether/Platform
 
 ifneq ($(notdir $(CURDIR)),build)
