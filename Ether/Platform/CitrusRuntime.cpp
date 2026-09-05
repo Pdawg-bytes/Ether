@@ -13,16 +13,16 @@ namespace
     constexpr s16 CircleDeadZone  = 10;
     constexpr f32 CircleLookScale = 12.0f / 156.0f;
 
-    struct CTRRuntime
+    struct CitrusRuntime
     {
-        CTRRuntime(u32 width, u32 height)
+        CitrusRuntime(u32 width, u32 height)
             : renderWidth(width), renderHeight(height), scale(ScreenHeight / height)
         {
             gfxInitDefault();
             gfxSetDoubleBuffering(GFX_TOP, false);
         }
 
-        ~CTRRuntime()
+        ~CitrusRuntime()
         {
             gfxExit();
         }
@@ -34,7 +34,7 @@ namespace
         circlePosition circlePad{};
     };
 
-    void BlitNearest(const CTRRuntime& runtime, const u32* source, u8* destination)
+    void Blit(const CitrusRuntime& runtime, const u32* source, u8* destination)
     {
         u32 imageWidth  = runtime.renderWidth * runtime.scale;
         u32 imageHeight = runtime.renderHeight * runtime.scale;
@@ -45,18 +45,18 @@ namespace
         {
             for (u32 x = 0; x < runtime.renderWidth; x++)
             {
-                u32 color = source[y * runtime.renderWidth + x];
-                u8 red    = (u8)(color & 0xff);
-                u8 green  = (u8)((color >> 8) & 0xff);
-                u8 blue   = (u8)((color >> 16) & 0xff);
+                const u32 color = source[y * runtime.renderWidth + x];
+                const u8 red    = (u8)(color & 0xff);
+                const u8 green  = (u8)((color >> 8) & 0xff);
+                const u8 blue   = (u8)((color >> 16) & 0xff);
 
                 for (u32 yScale = 0; yScale < runtime.scale; yScale++)
                 {
                     u32 screenY = topOffset + y * runtime.scale + yScale;
                     for (u32 xScale = 0; xScale < runtime.scale; xScale++)
                     {
-                        u32 screenX = leftOffset + x * runtime.scale + xScale;
-                        usize offset = ((usize)screenX * ScreenHeight + (ScreenHeight - screenY)) * BytesPerPixel;
+                        u32 screenX  = leftOffset + x * runtime.scale + xScale;
+                        usize offset = ((usize)screenX * ScreenHeight + (ScreenHeight - 1 - screenY)) * BytesPerPixel;
                         destination[offset + 0] = blue;
                         destination[offset + 1] = green;
                         destination[offset + 2] = red;
@@ -70,20 +70,23 @@ namespace
 namespace Platform
 {
     Runtime::Runtime(u32 width, u32 height, const char*)
-        : _implementation(new CTRRuntime(width, height))
+        : _implementation(new CitrusRuntime(width, height))
     {
     }
 
     Runtime::~Runtime()
     {
-        delete static_cast<CTRRuntime*>(_implementation);
+        delete static_cast<CitrusRuntime*>(_implementation);
     }
 
     bool Runtime::PollEvents()
     {
+        if (!aptMainLoop())
+            return false;
+
         hidScanInput();
-        CTRRuntime* runtime = static_cast<CTRRuntime*>(_implementation);
-        runtime->heldKeys     = hidKeysHeld();
+        CitrusRuntime* runtime = static_cast<CitrusRuntime*>(_implementation);
+        runtime->heldKeys      = hidKeysHeld();
 
         hidCircleRead(&runtime->circlePad);
         return (hidKeysDown() & KEY_START) == 0;
@@ -91,7 +94,7 @@ namespace Platform
 
     bool Runtime::IsKeyDown(Key key) const
     {
-        const CTRRuntime* runtime = static_cast<const CTRRuntime*>(_implementation);
+        const CitrusRuntime* runtime = static_cast<const CitrusRuntime*>(_implementation);
         const bool circlePadActive = runtime->circlePad.dx > CircleDeadZone ||
             runtime->circlePad.dx < -CircleDeadZone ||
             runtime->circlePad.dy > CircleDeadZone  ||
@@ -117,7 +120,7 @@ namespace Platform
 
     void Runtime::GetLookDelta(f32& outX, f32& outY)
     {
-        const CTRRuntime* runtime = static_cast<const CTRRuntime*>(_implementation);
+        const CitrusRuntime* runtime = static_cast<const CitrusRuntime*>(_implementation);
 
         outX = runtime->circlePad.dx > CircleDeadZone || runtime->circlePad.dx < -CircleDeadZone
             ? runtime->circlePad.dx * CircleLookScale
@@ -130,10 +133,10 @@ namespace Platform
 
     void Runtime::Present(const u32* framebuffer, const Camera*, const BVH*)
     {
-        CTRRuntime* runtime = static_cast<CTRRuntime*>(_implementation);
-        u8* screen            = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, nullptr, nullptr);
+        CitrusRuntime* runtime = static_cast<CitrusRuntime*>(_implementation);
+        u8* screen             = gfxGetFramebuffer(GFX_TOP, GFX_LEFT, nullptr, nullptr);
 
-        BlitNearest(*runtime, framebuffer, screen);
+        Blit(*runtime, framebuffer, screen);
         gfxFlushBuffers();
         gfxSwapBuffers();
     }

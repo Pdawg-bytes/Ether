@@ -19,10 +19,10 @@
 
 namespace
 {
-    constexpr u32 Width			  = 200;
-    constexpr u32 Height		  = 120;
-    constexpr f32 MoveSpeed		  = 3.5f;
-    constexpr f32 LookSensitivity = 0.15f;
+    constexpr u32 Width			  = 50;
+    constexpr u32 Height		  = 30;
+    constexpr f32 MoveSpeed		  = 2.5f;
+    constexpr f32 LookSensitivity = 0.5f;
 
     struct SceneMaterials
     {
@@ -298,7 +298,7 @@ int main()
         timeAccumulator += deltaTime;
         if (timeAccumulator >= 0.5)
         {
-            f64 fps			   = frameCount / timeAccumulator;
+            f64 fps			  = frameCount / timeAccumulator;
             std::string title = "Ether | FPS: " + std::to_string((s32)fps);
             runtime.SetTitle(title.c_str());
 

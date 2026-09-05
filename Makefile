@@ -23,10 +23,10 @@ LDFLAGS         := -specs=3dsx.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 LIBS            := -lctru -lm
 LIBPATHS        := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
-CPPFILES        := main.cpp Camera.cpp Lighting.cpp Raymarcher.cpp \
-			BVH.cpp CSGTree.cpp Material.cpp MaterialLibrary.cpp SceneObject.cpp \
-			SDFPrimitives.cpp Texture.cpp CTRRuntime.cpp
-VPATH           := $(TOPDIR)/Ether $(TOPDIR)/Ether/Renderer $(TOPDIR)/Ether/Scene $(TOPDIR)/Ether/Platform
+rwildcard       = $(foreach dir,$(wildcard $1*/),$(call rwildcard,$(dir),$2)) $(wildcard $1$2)
+SOURCE_FILES    := $(call rwildcard,$(TOPDIR)/Ether/,*.cpp)
+CPPFILES        := $(filter-out WindowsRuntime.cpp Window.cpp ThreadPool.cpp,$(notdir $(SOURCE_FILES)))
+VPATH           := $(sort $(dir $(SOURCE_FILES)))
 
 ifneq ($(notdir $(CURDIR)),build)
 
