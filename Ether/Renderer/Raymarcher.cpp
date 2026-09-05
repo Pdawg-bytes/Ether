@@ -1,5 +1,7 @@
 #include "Raymarcher.h"
+#ifdef MULTI_THREADED_RENDERING
 #include "../Platform/ThreadPool.h"
+#endif
 #include "../Scene/Material.h"
 #include "../Scene/MaterialLibrary.h"
 

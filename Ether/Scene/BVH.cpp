@@ -23,7 +23,7 @@ namespace
     inline s32 ComputeBucketIndex(f32 value, f32 axisMin, f32 invAxisRange)
     {
         s32 bucket = (s32)((value - axisMin) * invAxisRange);
-        return std::clamp(bucket, 0, SAHBucketCount - 1);
+        return std::clamp(bucket, (s32)0, SAHBucketCount - 1);
     }
 }
 

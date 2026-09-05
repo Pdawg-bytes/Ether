@@ -1,4 +1,4 @@
-#include "Platform/Window.h"
+#include "Platform/Runtime.h"
 #include "Renderer/Camera.h"
 #include "Renderer/Raymarcher.h"
 #include "Renderer/Lighting.h"
@@ -19,10 +19,10 @@
 
 namespace
 {
-    constexpr u32 Width			   = 100;
-    constexpr u32 Height		   = 60;
-    constexpr f32 MoveSpeed		   = 3.5f;
-    constexpr f32 MouseSensitivity = 0.15f;
+    constexpr u32 Width			  = 200;
+    constexpr u32 Height		  = 120;
+    constexpr f32 MoveSpeed		  = 3.5f;
+    constexpr f32 LookSensitivity = 0.15f;
 
     struct SceneMaterials
     {
@@ -233,9 +233,9 @@ namespace
 }
 
 
-s32 main()
+int main()
 {
-    Window window(Width, Height, L"Ether");
+    Platform::Runtime runtime(Width, Height, "Ether");
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
     SceneMaterials materials = RegisterMaterials();
@@ -253,30 +253,30 @@ s32 main()
     s32 frameCount	    = 0;
     f64 timeAccumulator = 0.0;
 
-    while (window.PollEvents())
+    while (runtime.PollEvents())
     {
         auto currentTime = std::chrono::steady_clock::now();
         f32 deltaTime    = std::chrono::duration<f32>(currentTime - lastTime).count();
         lastTime	     = currentTime;
 
         f32 mouseDeltaX, mouseDeltaY;
-        window.GetMouseDelta(mouseDeltaX, mouseDeltaY);
+        runtime.GetLookDelta(mouseDeltaX, mouseDeltaY);
         bool cameraChanged = mouseDeltaX != 0.0f || mouseDeltaY != 0.0f;
 
-        camera.Yaw   += mouseDeltaX * MouseSensitivity;
-        camera.Pitch -= mouseDeltaY * MouseSensitivity;
+        camera.Yaw   += mouseDeltaX * LookSensitivity;
+        camera.Pitch -= mouseDeltaY * LookSensitivity;
         camera.Pitch  = std::clamp(camera.Pitch, -89.0f, 89.0f);
 
         Vector3 movement = Vector3::Zero;
-        if (window.IsKeyDown('W')) movement += camera.Forward;
-        if (window.IsKeyDown('S')) movement -= camera.Forward;
-        if (window.IsKeyDown('A')) movement -= camera.Right;
-        if (window.IsKeyDown('D')) movement += camera.Right;
-        if (window.IsKeyDown(VK_SPACE)) movement += Vector3::UnitY;
-        if (window.IsKeyDown(VK_SHIFT)) movement -= Vector3::UnitY;
+        if (runtime.IsKeyDown(Platform::Key::Forward))  movement += camera.Forward;
+        if (runtime.IsKeyDown(Platform::Key::Backward)) movement -= camera.Forward;
+        if (runtime.IsKeyDown(Platform::Key::Left))     movement -= camera.Right;
+        if (runtime.IsKeyDown(Platform::Key::Right))    movement += camera.Right;
+        if (runtime.IsKeyDown(Platform::Key::Up))       movement += Vector3::UnitY;
+        if (runtime.IsKeyDown(Platform::Key::Down))     movement -= Vector3::UnitY;
 
         f32 speed = MoveSpeed * deltaTime;
-        if (window.IsKeyDown(VK_CONTROL)) speed *= 4.0f;
+        if (runtime.IsKeyDown(Platform::Key::Boost)) speed *= 4.0f;
 
         if (movement != Vector3::Zero)
         {
@@ -287,20 +287,20 @@ s32 main()
         if (cameraChanged)
             camera.UpdateView();
 
-        bool bDown = window.IsKeyDown('B');
+        bool bDown = runtime.IsKeyDown(Platform::Key::ToggleBVH);
         if (bDown && !prevBDown) showBVH = !showBVH;
         prevBDown = bDown;
 
         raymarcher.Render(framebuffer.data());
-        window.Present(framebuffer.data(), showBVH ? &camera : nullptr, showBVH ? &bvh : nullptr);
+        runtime.Present(framebuffer.data(), showBVH ? &camera : nullptr, showBVH ? &bvh : nullptr);
 
         frameCount++;
         timeAccumulator += deltaTime;
         if (timeAccumulator >= 0.5)
         {
             f64 fps			   = frameCount / timeAccumulator;
-            std::wstring title = L"Ether | FPS: " + std::to_wstring((s32)fps);
-            window.SetTitle(title.c_str());
+            std::string title = "Ether | FPS: " + std::to_string((s32)fps);
+            runtime.SetTitle(title.c_str());
 
             frameCount	    = 0;
             timeAccumulator = 0.0;

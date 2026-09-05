@@ -169,6 +169,7 @@
     <ClCompile Include="Renderer\Lighting.cpp" />
     <ClCompile Include="Platform\Window.cpp" />
     <ClCompile Include="Platform\ThreadPool.cpp" />
+    <ClCompile Include="Platform\WindowsRuntime.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlobalTypes.h" />
@@ -189,6 +190,7 @@
     <ClInclude Include="Renderer\Lighting.h" />
     <ClInclude Include="Platform\Window.h" />
     <ClInclude Include="Platform\ThreadPool.h" />
+    <ClInclude Include="Platform\Runtime.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
