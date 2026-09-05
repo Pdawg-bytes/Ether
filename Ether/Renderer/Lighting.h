@@ -59,7 +59,6 @@ public:
     Vector3 Shade(const BVH& bvh, const SurfacePoint& surface, const Vector3& viewDir) const;
 
 private:
-    bool IsOccluded(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 maxDistance) const;
     f32  CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const;
 
     std::vector<Light> _lights;

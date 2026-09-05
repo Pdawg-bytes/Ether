@@ -1,5 +1,5 @@
 #include "CSGTree.h"
-#include "SDFPrimitives.h"
+#include "Primitives.h"
 #include "../Math/MathUtil.h"
 
 #include <algorithm>

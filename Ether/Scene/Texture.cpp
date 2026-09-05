@@ -7,10 +7,10 @@ Texture::Texture(u32 width, u32 height)
 {
 }
 
-Vector3 Texture::Sample(f32 u, f32 v) const
+Vector3 Texture::Sample(const Vector2& uv) const
 {
-    f32 fx = u - std::floor(u);
-    f32 fy = v - std::floor(v);
+    f32 fx = uv.X - std::floor(uv.X);
+    f32 fy = uv.Y - std::floor(uv.Y);
 
     f32 px = fx * (f32)_width - 0.5f;
     f32 py = fy * (f32)_height - 0.5f;

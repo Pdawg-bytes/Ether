@@ -158,14 +158,14 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Scene\SceneObject.cpp" />
-    <ClCompile Include="Scene\SDFPrimitives.cpp" />
+    <ClCompile Include="Scene\Primitives.cpp" />
     <ClCompile Include="Scene\CSGTree.cpp" />
     <ClCompile Include="Scene\BVH.cpp" />
     <ClCompile Include="Scene\Texture.cpp" />
     <ClCompile Include="Scene\Material.cpp" />
     <ClCompile Include="Scene\MaterialLibrary.cpp" />
     <ClCompile Include="Renderer\Camera.cpp" />
-    <ClCompile Include="Renderer\Raymarcher.cpp" />
+    <ClCompile Include="Renderer\Raytracer.cpp" />
     <ClCompile Include="Renderer\Lighting.cpp" />
     <ClCompile Include="Platform\Window.cpp" />
     <ClCompile Include="Platform\ThreadPool.cpp" />
@@ -173,20 +173,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlobalTypes.h" />
+    <ClInclude Include="Math\Vector2.h" />
     <ClInclude Include="Math\Vector3.h" />
     <ClInclude Include="Math\Quaternion.h" />
     <ClInclude Include="Math\AABB.h" />
     <ClInclude Include="Math\MathUtil.h" />
     <ClInclude Include="Core\Ray.h" />
     <ClInclude Include="Scene\SceneObject.h" />
-    <ClInclude Include="Scene\SDFPrimitives.h" />
+    <ClInclude Include="Scene\Primitives.h" />
     <ClInclude Include="Scene\CSGTree.h" />
     <ClInclude Include="Scene\BVH.h" />
     <ClInclude Include="Scene\Texture.h" />
     <ClInclude Include="Scene\Material.h" />
     <ClInclude Include="Scene\MaterialLibrary.h" />
     <ClInclude Include="Renderer\Camera.h" />
-    <ClInclude Include="Renderer\Raymarcher.h" />
+    <ClInclude Include="Renderer\Raytracer.h" />
     <ClInclude Include="Renderer\Lighting.h" />
     <ClInclude Include="Platform\Window.h" />
     <ClInclude Include="Platform\ThreadPool.h" />

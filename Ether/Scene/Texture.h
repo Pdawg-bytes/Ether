@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/Vector3.h"
+#include "../Math/Vector2.h"
 
 #include <memory>
 #include <vector>
@@ -10,8 +11,8 @@ class Texture
 public:
     Texture(u32 width, u32 height);
 
-    Vector3 Sample(f32 u, f32 v) const;
-    f32 SampleScalar(f32 u, f32 v) const { return Sample(u, v).X; }
+    Vector3 Sample(const Vector2& uv) const;
+    f32 SampleScalar(const Vector2& uv) const { return Sample(uv).X; }
 
     void SetPixel(u32 x, u32 y, const Vector3& color);
 

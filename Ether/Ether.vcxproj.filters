@@ -21,7 +21,7 @@
     <ClCompile Include="Scene\SceneObject.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Scene\SDFPrimitives.cpp">
+    <ClCompile Include="Scene\Primitives.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Scene\CSGTree.cpp">
@@ -42,7 +42,7 @@
     <ClCompile Include="Renderer\Camera.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="Renderer\Raymarcher.cpp">
+    <ClCompile Include="Renderer\Raytracer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Renderer\Lighting.cpp">
@@ -59,6 +59,9 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Math\Vector2.h">
+      <Filter>Math</Filter>
+    </ClInclude>
     <ClInclude Include="Math\Vector3.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -77,7 +80,7 @@
     <ClInclude Include="Scene\SceneObject.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Scene\SDFPrimitives.h">
+    <ClInclude Include="Scene\Primitives.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Scene\CSGTree.h">
@@ -98,7 +101,7 @@
     <ClInclude Include="Renderer\Camera.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="Renderer\Raymarcher.h">
+    <ClInclude Include="Renderer\Raytracer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Renderer\Lighting.h">

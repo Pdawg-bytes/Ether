@@ -4,7 +4,7 @@ namespace
 {
     struct PlanarUV
     {
-        f32     U, V;
+        Vector2 UV;
         Vector3 Tangent;
         Vector3 Bitangent;
     };
@@ -14,35 +14,47 @@ namespace
         Vector3 absNormal = Vector3::Abs(normal);
 
         if (absNormal.X >= absNormal.Y && absNormal.X >= absNormal.Z)
-            return { worldPosition.Y * scale, worldPosition.Z * scale, Vector3::UnitY, Vector3::UnitZ };
+            return { Vector2(worldPosition.Y * scale, worldPosition.Z * scale), Vector3::UnitY, Vector3::UnitZ };
 
         if (absNormal.Y >= absNormal.X && absNormal.Y >= absNormal.Z)
-            return { worldPosition.X * scale, worldPosition.Z * scale, Vector3::UnitX, Vector3::UnitZ };
+            return { Vector2(worldPosition.X * scale, worldPosition.Z * scale), Vector3::UnitX, Vector3::UnitZ };
 
-        return { worldPosition.X * scale, worldPosition.Y * scale, Vector3::UnitX, Vector3::UnitY };
+        return { Vector2(worldPosition.X * scale, worldPosition.Y * scale), Vector3::UnitX, Vector3::UnitY };
     }
 }
 
-MaterialSample Material::Evaluate(const Vector3& worldPosition, const Vector3& normal) const
+MaterialSample Material::Evaluate(const Vector3& worldPosition, const Vector3& normal, const Vector2& uvCoordinates, bool hasUV) const
 {
     MaterialSample sample{ Albedo, Roughness, Metallic, Emission, normal, IOR, Transmission };
 
     if (!AlbedoMap && !RoughnessMap && !EmissionMap && !BumpMap)
         return sample;
 
-    PlanarUV uv = ProjectDominant(worldPosition, normal, TextureScale);
+    PlanarUV uv;
+    if (hasUV)
+    {
+        uv.UV = uvCoordinates * TextureScale;
 
-    if (AlbedoMap)    sample.Albedo    = AlbedoMap->Sample(uv.U, uv.V);
-    if (RoughnessMap) sample.Roughness = RoughnessMap->SampleScalar(uv.U, uv.V);
-    if (EmissionMap)  sample.Emission  = EmissionMap->Sample(uv.U, uv.V);
+        Vector3 up = (std::abs(normal.Y) < 0.999f) ? Vector3::UnitY : Vector3::UnitX;
+        uv.Tangent = normal.Cross(up).Normalized();
+        uv.Bitangent = normal.Cross(uv.Tangent).Normalized();
+    }
+    else
+    {
+        uv = ProjectDominant(worldPosition, normal, TextureScale);
+    }
+
+    if (AlbedoMap)    sample.Albedo    = AlbedoMap->Sample(uv.UV);
+    if (RoughnessMap) sample.Roughness = RoughnessMap->SampleScalar(uv.UV);
+    if (EmissionMap)  sample.Emission  = EmissionMap->Sample(uv.UV);
 
     if (BumpMap)
     {
         constexpr f32 Epsilon = 0.01f;
-        auto s = [&](f32 u, f32 v){ return BumpMap->SampleScalar(u, v); };
+        auto s = [&](const Vector2& coordinates){ return BumpMap->SampleScalar(coordinates); };
 
-        f32 dHdu = (s(uv.U + Epsilon, uv.V) - s(uv.U - Epsilon, uv.V)) / (2.0f * Epsilon);
-        f32 dHdv = (s(uv.U, uv.V + Epsilon) - s(uv.U, uv.V - Epsilon)) / (2.0f * Epsilon);
+        f32 dHdu = (s(uv.UV + Vector2(Epsilon, 0.0f)) - s(uv.UV - Vector2(Epsilon, 0.0f))) / (2.0f * Epsilon);
+        f32 dHdv = (s(uv.UV + Vector2(0.0f, Epsilon)) - s(uv.UV - Vector2(0.0f, Epsilon))) / (2.0f * Epsilon);
 
         Vector3 tangent   = (uv.Tangent   - normal * normal.Dot(uv.Tangent)).Normalized();
         Vector3 bitangent = (uv.Bitangent - normal * normal.Dot(uv.Bitangent)).Normalized();

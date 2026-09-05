@@ -1,6 +1,6 @@
 #include "Platform/Runtime.h"
 #include "Renderer/Camera.h"
-#include "Renderer/Raymarcher.h"
+#include "Renderer/Raytracer.h"
 #include "Renderer/Lighting.h"
 #include "Scene/BVH.h"
 #include "Scene/SceneObject.h"
@@ -19,8 +19,8 @@
 
 namespace
 {
-    constexpr u32 Width			  = 50;
-    constexpr u32 Height		  = 30;
+    constexpr u32 Width			  = 200;
+    constexpr u32 Height		  = 120;
     constexpr f32 MoveSpeed		  = 2.5f;
     constexpr f32 LookSensitivity = 0.5f;
 
@@ -242,7 +242,7 @@ int main()
     BVH bvh				     = BuildCornellBox(materials);
     Lighting lighting		 = BuildLighting();
 
-    Raymarcher raymarcher(camera, bvh, lighting, Width, Height);
+    Raytracer raytracer(camera, bvh, lighting, Width, Height);
 
     std::vector<u32> framebuffer(Width * Height);
 
@@ -291,7 +291,7 @@ int main()
         if (bDown && !prevBDown) showBVH = !showBVH;
         prevBDown = bDown;
 
-        raymarcher.Render(framebuffer.data());
+        raytracer.Render(framebuffer.data());
         runtime.Present(framebuffer.data(), showBVH ? &camera : nullptr, showBVH ? &bvh : nullptr);
 
         frameCount++;

@@ -1,7 +1,9 @@
 #pragma once
 
 #include "Vector3.h"
+#include "../Core/Ray.h"
 #include <algorithm>
+#include <cmath>
 #include <limits>
 
 struct AABB
@@ -41,5 +43,78 @@ struct AABB
 	{
 		Vector3 d = Max - Min;
 		return 2.0f * (d.X * d.Y + d.Y * d.Z + d.Z * d.X);
+	}
+
+	bool Intersect(const Ray& ray, f32 tMin, f32 tMax, f32& outT0, f32& outT1) const
+	{
+		f32 t0 = tMin;
+		f32 t1 = tMax;
+
+		if (std::abs(ray.Direction.X) > 1e-8f)
+		{
+			f32 invD  = 1.0f / ray.Direction.X;
+			f32 tNear = (Min.X - ray.Origin.X) * invD;
+			f32 tFar  = (Max.X - ray.Origin.X) * invD;
+
+			if (tNear > tFar) 
+				std::swap(tNear, tFar);
+
+			t0 = std::max(t0, tNear);
+			t1 = std::min(t1, tFar);
+
+			if (t0 > t1) return false;
+		}
+		else if (ray.Origin.X < Min.X || ray.Origin.X > Max.X)
+		{
+			return false;
+		}
+
+		if (std::abs(ray.Direction.Y) > 1e-8f)
+		{
+			f32 invD  = 1.0f / ray.Direction.Y;
+			f32 tNear = (Min.Y - ray.Origin.Y) * invD;
+			f32 tFar  = (Max.Y - ray.Origin.Y) * invD;
+
+			if (tNear > tFar) 
+				std::swap(tNear, tFar);
+
+			t0 = std::max(t0, tNear);
+			t1 = std::min(t1, tFar);
+
+			if (t0 > t1) return false;
+		}
+		else if (ray.Origin.Y < Min.Y || ray.Origin.Y > Max.Y)
+		{
+			return false;
+		}
+
+		if (std::abs(ray.Direction.Z) > 1e-8f)
+		{
+			f32 invD  = 1.0f / ray.Direction.Z;
+			f32 tNear = (Min.Z - ray.Origin.Z) * invD;
+			f32 tFar  = (Max.Z - ray.Origin.Z) * invD;
+
+			if (tNear > tFar) 
+				std::swap(tNear, tFar);
+
+			t0 = std::max(t0, tNear);
+			t1 = std::min(t1, tFar);
+			
+			if (t0 > t1) return false;
+		}
+		else if (ray.Origin.Z < Min.Z || ray.Origin.Z > Max.Z)
+		{
+			return false;
+		}
+
+		outT0 = t0;
+		outT1 = t1;
+		return true;
+	}
+
+	bool Intersect(const Ray& ray, f32 tMin, f32 tMax) const
+	{
+		f32 t0, t1;
+		return Intersect(ray, tMin, tMax, t0, t1);
 	}
 };

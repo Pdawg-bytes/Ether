@@ -4,7 +4,7 @@
 #include "../Math/Quaternion.h"
 #include "../Math/AABB.h"
 #include "SceneObject.h"
-#include "SDFPrimitives.h"
+#include "Primitives.h"
 
 #include <memory>
 #include <vector>

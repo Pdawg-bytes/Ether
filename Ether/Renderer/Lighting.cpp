@@ -7,14 +7,12 @@
 
 namespace
 {
-    constexpr f32 AmbientIntensity     = 0.03f;
-    constexpr f32 ShadowBias		   = 0.001f;
-    constexpr f32 ShadowMinHitDistance = 0.0005f;
-    constexpr s32 ShadowMaxSteps	   = 64;
-    constexpr f32 MaxTraceDistance     = 100.0f;
-    constexpr s32 AOSteps              = 3;
-    constexpr f32 AOStepSize           = 0.1f;
-    constexpr f32 AOIntensity          = 2.0f;
+    constexpr f32 AmbientIntensity = 0.03f;
+    constexpr f32 ShadowBias       = 0.001f;
+    constexpr f32 MaxTraceDistance = 100.0f;
+    constexpr s32 AOSteps          = 3;
+    constexpr f32 AOStepSize       = 0.1f;
+    constexpr f32 AOIntensity      = 2.0f;
 }
 
 void Lighting::AddLight(const Light& light)
@@ -22,30 +20,6 @@ void Lighting::AddLight(const Light& light)
     _lights.push_back(light);
 }
 
-
-bool Lighting::IsOccluded(const BVH& bvh, const Vector3& origin, const Vector3& direction, f32 maxDistance) const
-{
-    if (maxDistance <= 0.0f)
-        return false;
-
-    f32 traveled = 0.0f;
-
-    for (s32 step = 0; step < ShadowMaxSteps; step++)
-    {
-        s32 object;
-        Vector3 point = origin + direction * traveled;
-        f32 distance  = bvh.Distance(point, object);
-
-        if (distance < ShadowMinHitDistance)
-            return true;
-
-        traveled += distance;
-        if (traveled >= maxDistance)
-            break;
-    }
-
-    return false;
-}
 
 f32 Lighting::CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const
 {
@@ -107,7 +81,8 @@ Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vecto
             continue;
 
         Vector3 shadowOrigin = surface.Position + surface.Normal * ShadowBias;
-        f32 shadow           = IsOccluded(bvh, shadowOrigin, lightDir, maxT) ? 0.0f : 1.0f;
+        RayHit shadowHit;
+        f32 shadow = bvh.Intersect(Ray(shadowOrigin, lightDir), shadowHit, 0.0001f, maxT ) ? 0.0f : 1.0f;
 
         Vector3 halfVec = (viewDir + lightDir).Normalized();
         f32 nDotH		= std::max(surface.Normal.Dot(halfVec), 0.0f);

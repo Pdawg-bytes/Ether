@@ -29,9 +29,11 @@ class BVH
 public:
     void Build(std::vector<SceneObject> objects);
 
+    bool Intersect(const Ray& ray, RayHit& hit, f32 minT = 0.0001f, f32 maxT = 1e30f) const;
     f32 Distance(const Vector3& worldPoint, s32& hitObjectIndex) const;
 
     const SceneObject& GetObject(s32 index) const { return _objects[index]; }
+    s32 GetObjectCount() const                    { return (s32)_objects.size(); }
 
     s32 GetNodeCount() const			    { return (s32)_nodes.size(); }
     const BVHNode& GetNode(s32 index) const { return _nodes[index]; }

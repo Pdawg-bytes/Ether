@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../Math/Vector3.h"
+#include "../Math/Vector2.h"
 #include "Texture.h"
 
 #include <memory>
@@ -39,5 +40,5 @@ struct Material
     f32 IOR		     = 1.5f;
     f32 Transmission = 0.0f;
 
-    MaterialSample Evaluate(const Vector3& worldPosition, const Vector3& normal) const;
+    MaterialSample Evaluate(const Vector3& worldPosition, const Vector3& normal, const Vector2& uv = Vector2::Zero, bool hasUV = false) const;
 };
