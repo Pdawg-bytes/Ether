@@ -30,6 +30,7 @@ namespace Platform
         void GetLookDelta(f32& outX, f32& outY);
         void Present(const u32* framebuffer, const Camera* camera, const BVH* bvh);
         void SetTitle(const char* title);
+        void Log(const char* message);
 
     private:
         void* _implementation;

@@ -4,6 +4,8 @@
 
 #include <vector>
 
+#define AMBIENT_OCCLUSION
+
 enum class LightType
 {
     Point,
@@ -15,7 +17,7 @@ struct Light
     LightType Type;
     Vector3 Color = Vector3(1.0f);
     f32 Intensity = 1.0f;
-    f32 Radius = 0.0f;
+    f32 Radius    = 0.0f;
     
     union
     {
@@ -59,7 +61,7 @@ public:
     Vector3 Shade(const BVH& bvh, const SurfacePoint& surface, const Vector3& viewDir) const;
 
 private:
-    f32  CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const;
+    f32 CalculateAO(const BVH& bvh, const Vector3& position, const Vector3& normal) const;
 
     std::vector<Light> _lights;
 };

@@ -8,6 +8,7 @@ include $(DEVKITARM)/3ds_rules
 TARGET          := Ether
 BUILD           := 3DS/build
 OUTPUT_ROOT     := $(TOPDIR)/3DS/$(TARGET)
+ROMFS           := Data
 ARCH            := -march=armv6k -mtune=mpcore -mfloat-abi=hard -mtp=soft
 DEVKITPRO_UNIX  := $(shell if command -v cygpath >/dev/null 2>&1; then cygpath -u "$(DEVKITPRO)"; else echo "$(DEVKITPRO)"; fi)
 LIBDIRS         := $(DEVKITPRO_UNIX)/libctru
@@ -15,7 +16,7 @@ INCLUDE         := -I$(TOPDIR)/Ether -I$(TOPDIR)/Ether/Platform \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
 			-I$(TOPDIR)/$(BUILD)
 
-ARCH_FLAGS      := -g -Wall -O2 -mword-relocations -ffunction-sections $(ARCH)
+ARCH_FLAGS      := -g -Wall -O3 -mword-relocations -ffunction-sections $(ARCH)
 CFLAGS          := $(ARCH_FLAGS) -D__3DS__ -include $(TOPDIR)/Ether/GlobalTypes.h $(INCLUDE)
 CXXFLAGS        := $(CFLAGS) -fno-rtti -fno-exceptions -std=gnu++17
 ASFLAGS         := -g $(ARCH)
@@ -43,7 +44,7 @@ export INCLUDE        := $(INCLUDE)
 export LIBPATHS       := $(LIBPATHS)
 export CFLAGS         := $(CFLAGS)
 export CXXFLAGS       := $(CXXFLAGS)
-export _3DSXFLAGS     := --smdh=$(OUTPUT_ROOT).smdh
+export _3DSXFLAGS     := --smdh=$(OUTPUT_ROOT).smdh --romfs=$(TOPDIR)/$(ROMFS)
 
 .PHONY: all clean $(BUILD)
 

@@ -7,98 +7,27 @@
 #include "Scene/CSGTree.h"
 #include "Scene/Material.h"
 #include "Scene/MaterialLibrary.h"
+#include "Scene/MaterialFactory.h"
 #include "Scene/Texture.h"
 #include "Math/MathUtil.h"
+#include "Scene/OBJLoader.h"
 
 #include <algorithm>
 #include <chrono>
 #include <cmath>
+#include <cstdio>
 #include <memory>
 #include <string>
 #include <vector>
 
 namespace
 {
-    constexpr u32 Width			  = 200;
-    constexpr u32 Height		  = 120;
-    constexpr f32 MoveSpeed		  = 2.5f;
-    constexpr f32 LookSensitivity = 0.5f;
+    constexpr u32 Width			  = 50;
+    constexpr u32 Height		  = 30;
+    constexpr f32 MoveSpeed		  = 1.5f;
+    constexpr f32 LookSensitivity = 0.15f;
 
-    struct SceneMaterials
-    {
-        s32 Checker;
-        s32 White;
-        s32 Red;
-        s32 Green;
-        s32 Metal;
-        s32 Glass;
-        s32 Emissive;
-        s32 Mirror;
-        s32 Diffuse;
-    };
-
-    SceneMaterials RegisterMaterials()
-    {
-        std::shared_ptr<Texture> checkerTexture = Texture::CreateCheckerboard(64, 64, 8, Vector3(0.9f), Vector3(0.08f));
-
-        Material checker;
-        checker.AlbedoMap    = checkerTexture;
-        checker.Roughness    = 1.0f;
-        checker.Metallic     = 0.0f;
-        checker.TextureScale = 0.5f;
-
-        Material metal;
-        metal.Albedo    = Vector3(0.85f, 0.8f, 0.65f);
-        metal.Roughness = 0.25f;
-        metal.Metallic  = 1.0f;
-
-        Material glass;
-        glass.Albedo       = Vector3(0.9f, 0.95f, 1.0f);
-        glass.Roughness    = 0.05f;
-        glass.IOR          = 1.5f;
-        glass.Transmission = 0.9f;
-
-        Material emissive;
-        emissive.Albedo    = Vector3(0.2f, 0.05f, 0.05f);
-        emissive.Roughness = 0.4f;
-        emissive.Emission  = Vector3(3.0f, 0.6f, 0.2f);
-
-        Material mirror;
-        mirror.Albedo    = Vector3::One;
-        mirror.Roughness = 0.2f;
-        mirror.Metallic  = 1.0f;
-
-        Material diffuse;
-        diffuse.Albedo    = Vector3(0.45f, 0.40f, 0.15f);
-        diffuse.Roughness = 1.0f;
-
-        Material white;
-        white.Albedo    = Vector3(0.75f);
-        white.Roughness = 1.0f;
-
-        Material red;
-        red.Albedo    = Vector3(0.65f, 0.05f, 0.04f);
-        red.Roughness = 1.0f;
-
-        Material green;
-        green.Albedo    = Vector3(0.05f, 0.55f, 0.08f);
-        green.Roughness = 1.0f;
-
-        MaterialLibrary& library = GetMaterialLibrary();
-
-        SceneMaterials materials;
-        materials.Checker  = library.Add(checker);
-        materials.White    = library.Add(white);
-        materials.Red      = library.Add(red);
-        materials.Green    = library.Add(green);
-        materials.Metal    = library.Add(metal);
-        materials.Glass    = library.Add(glass);
-        materials.Emissive = library.Add(emissive);
-        materials.Mirror   = library.Add(mirror);
-        materials.Diffuse  = library.Add(diffuse);
-        return materials;
-    }
-
+    using SceneMaterials = MaterialFactory::BuiltInMaterials;
 
     std::shared_ptr<CSGTree> BuildPillarTemplate()
     {
@@ -151,6 +80,7 @@ namespace
 
         return builder.Build(root);
     }
+
 
     BVH BuildScene(const SceneMaterials& materials)
     {
@@ -222,12 +152,25 @@ namespace
         return bvh;
     }
 
+    BVH BuildOBJScene(const SceneMaterials& materials)
+    {
+        std::vector<SceneObject> objects = OBJLoader::LoadFromFile("Teapot/teapot.obj");
+
+        objects.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f, materials.Checker));
+
+        BVH bvh;
+        bvh.Build(std::move(objects));
+        return bvh;
+    }
+    
+
     Lighting BuildLighting()
     {
         Lighting lighting;
+        lighting.AddLight(MakeDirectionalLight(Vector3(0.7, -1.0, 0.5), Vector3(1.0f, 0.95f, 0.85f), 1.0f));
         //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
         //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
-        lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
+        //lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
         return lighting;
     }
 }
@@ -238,9 +181,28 @@ int main()
     Platform::Runtime runtime(Width, Height, "Ether");
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
-    SceneMaterials materials = RegisterMaterials();
-    BVH bvh				     = BuildCornellBox(materials);
+    SceneMaterials materials = MaterialFactory::RegisterBuiltInMaterials();
+    BVH bvh				     = BuildOBJScene(materials);
     Lighting lighting		 = BuildLighting();
+
+    {
+        BVHMetrics metrics = bvh.ComputeMetrics();
+        char buffer[256];
+        snprintf(buffer, sizeof(buffer), "BVH Metrics");
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  Objects:   %ld", (long)bvh.GetObjectCount());
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  Nodes:     %ld", (long)bvh.GetNodeCount());
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  Max Depth: %ld", (long)metrics.MaxDepth);
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  Avg Depth: %.2f", metrics.AverageDepth);
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  SAH Cost:  %.2f", metrics.SAHCost);
+        runtime.Log(buffer);
+        snprintf(buffer, sizeof(buffer), "  Balance:   %.2f", metrics.BalanceFactor);
+        runtime.Log(buffer);
+    }
 
     Raytracer raytracer(camera, bvh, lighting, Width, Height);
 

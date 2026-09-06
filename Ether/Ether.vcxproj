@@ -89,6 +89,9 @@
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E /I "$(ProjectDir)..\Data" "$(OutDir)Data\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -112,6 +115,9 @@
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E /I "$(ProjectDir)..\Data" "$(OutDir)Data\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -132,6 +138,9 @@
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E /I "$(ProjectDir)..\Data" "$(OutDir)Data\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -154,6 +163,9 @@
     <Manifest>
       <EnableSegmentHeap>true</EnableSegmentHeap>
     </Manifest>
+    <PostBuildEvent>
+      <Command>xcopy /Y /E /I "$(ProjectDir)..\Data" "$(OutDir)Data\"</Command>
+    </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -178,7 +190,10 @@
     <ClInclude Include="Math\Quaternion.h" />
     <ClInclude Include="Math\AABB.h" />
     <ClInclude Include="Math\MathUtil.h" />
-    <ClInclude Include="Core\Ray.h" />
+    <ClInclude Include="Math\Ray.h" />
+    <ClInclude Include="Platform\FileLoader.h" />
+    <ClInclude Include="Scene\MaterialFactory.h" />
+    <ClInclude Include="Scene\OBJLoader.h" />
     <ClInclude Include="Scene\SceneObject.h" />
     <ClInclude Include="Scene\Primitives.h" />
     <ClInclude Include="Scene\CSGTree.h" />

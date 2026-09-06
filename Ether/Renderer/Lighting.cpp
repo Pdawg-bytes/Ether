@@ -43,7 +43,12 @@ f32 Lighting::CalculateAO(const BVH& bvh, const Vector3& position, const Vector3
 
 Vector3 Lighting::Shade(const BVH& bvh, const SurfacePoint& surface, const Vector3& viewDir) const
 {
-    f32 ao         = CalculateAO(bvh, surface.Position, surface.Normal);
+#ifdef AMBIENT_OCCLUSION
+    f32 ao = CalculateAO(bvh, surface.Position, surface.Normal);
+#else
+    f32 ao = 1.0f;
+#endif
+
     Vector3 result = surface.Albedo * AmbientIntensity * ao + surface.Emission;
 
     Vector3 f0	  = Vector3(0.04f) * (1.0f - surface.Metallic) + surface.Albedo * surface.Metallic;

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "../Math/Vector3.h"
-#include "../Core/Ray.h"
+#include "../Math/Ray.h"
 
 class Camera
 {

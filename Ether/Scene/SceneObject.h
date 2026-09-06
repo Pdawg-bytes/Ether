@@ -4,7 +4,7 @@
 #include "../Math/Vector2.h"
 #include "../Math/Quaternion.h"
 #include "../Math/AABB.h"
-#include "../Core/Ray.h"
+#include "../Math/Ray.h"
 #include "Primitives.h"
 
 #include <memory>

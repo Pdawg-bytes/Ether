@@ -4,6 +4,8 @@
 #include "../Scene/BVH.h"
 
 #include <3ds.h>
+#include <stdio.h>
+#include <string>
 
 namespace
 {
@@ -11,19 +13,26 @@ namespace
     constexpr u32 ScreenHeight    = 240;
     constexpr u32 BytesPerPixel   = 3;
     constexpr s16 CircleDeadZone  = 10;
-    constexpr f32 CircleLookScale = 12.0f / 156.0f;
+    constexpr f32 CircleLookScale = 0.3f;
 
     struct CitrusRuntime
     {
         CitrusRuntime(u32 width, u32 height)
-            : renderWidth(width), renderHeight(height), scale(ScreenHeight / height)
+            : renderWidth(width), renderHeight(height), scale(ScreenHeight / height), currentLogLine(1)
         {
             gfxInitDefault();
-            gfxSetDoubleBuffering(GFX_TOP, false);
+            consoleInit(GFX_BOTTOM, NULL);
+            
+            Result initResult = romfsInit();
+            if (initResult)
+                printf("Failed to init RomFS!\n");
+
+            gfxSetDoubleBuffering(GFX_TOP, true);
         }
 
         ~CitrusRuntime()
         {
+            romfsExit();
             gfxExit();
         }
 
@@ -32,6 +41,8 @@ namespace
         u32 scale;
         u32 heldKeys = 0;
         circlePosition circlePad{};
+        std::string title;
+        s32 currentLogLine = 1;
     };
 
     void Blit(const CitrusRuntime& runtime, const u32* source, u8* destination)
@@ -141,7 +152,22 @@ namespace Platform
         gfxSwapBuffers();
     }
 
-    void Runtime::SetTitle(const char*)
+    void Runtime::SetTitle(const char* title)
     {
+        CitrusRuntime* runtime = static_cast<CitrusRuntime*>(_implementation);
+        runtime->title         = title;
+        
+        printf("\x1b[1;0H");
+        printf("%-59s\n", title);
+    }
+
+    void Runtime::Log(const char* message)
+    {
+        CitrusRuntime* runtime = static_cast<CitrusRuntime*>(_implementation);
+        
+        printf("\x1b[%ld;0H", (long)(runtime->currentLogLine + 2));
+        puts(message);
+        
+        runtime->currentLogLine++;
     }
 }

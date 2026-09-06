@@ -3,6 +3,7 @@
 #include "Window.h"
 
 #include <string>
+#include <iostream>
 
 namespace
 {
@@ -75,5 +76,10 @@ namespace Platform
         std::wstring wideTitle  = WindowsRuntime::ToWide(title);
         
         runtime->window.SetTitle(wideTitle.c_str());
+    }
+
+    void Runtime::Log(const char* message)
+    {
+        std::cout << message << std::endl;
     }
 }

@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Vector3.h"
-#include "../Core/Ray.h"
+#include "../Math/Ray.h"
 #include <algorithm>
 #include <cmath>
 #include <limits>
