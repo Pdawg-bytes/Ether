@@ -156,10 +156,22 @@ namespace
     {
         std::vector<SceneObject> rootScene = OBJLoader::LoadFromFile(
             "Monado/monado.obj",
-            Vector3(0.0f, 0.9f, 0.0f),
+            Vector3(0.0f, 0.1f, 0.0f),
             Quaternion::Identity,
             Vector3::One
         );
+
+        std::vector<SceneObject> teapot = OBJLoader::LoadFromFile(
+            "Teapot/teapot.obj",
+            Vector3(1.5f, 0.0f, 0.0f),
+            Quaternion::Identity,
+            Vector3(0.1f)
+        );
+
+        rootScene.reserve(rootScene.size() + teapot.size());
+        rootScene.insert(rootScene.end(), teapot.begin(), teapot.end());
+
+        rootScene.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f, materials.Mirror));
 
         BVH bvh;
         bvh.Build(std::move(rootScene));
