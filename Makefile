@@ -26,7 +26,7 @@ LIBPATHS        := $(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 
 rwildcard       = $(foreach dir,$(wildcard $1*/),$(call rwildcard,$(dir),$2)) $(wildcard $1$2)
 SOURCE_FILES    := $(call rwildcard,$(TOPDIR)/Ether/,*.cpp)
-CPPFILES        := $(filter-out WindowsRuntime.cpp Window.cpp ThreadPool.cpp,$(notdir $(SOURCE_FILES)))
+CPPFILES        := $(filter-out WindowsRuntime.cpp Window.cpp,$(notdir $(SOURCE_FILES)))
 VPATH           := $(sort $(dir $(SOURCE_FILES)))
 
 ifneq ($(notdir $(CURDIR)),build)
