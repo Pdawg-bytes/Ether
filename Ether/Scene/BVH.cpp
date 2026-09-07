@@ -51,151 +51,161 @@ void BVH::Build(std::vector<SceneObject> objects)
     if (!boundedIndices.empty())
     {
         _nodes.reserve(boundedIndices.size() * 2 - 1);
-        _rootIndex = BuildRecursive(boundedIndices, 0, (s32)boundedIndices.size());
+        _rootIndex = BuildTree(boundedIndices);
     }
 }
 
-s32 BVH::BuildRecursive(std::vector<s32>& indices, s32 start, s32 end)
+s32 BVH::BuildTree(std::vector<s32>& indices)
 {
-    s32 count = end - start;
-
-    AABB bounds;
-    for (s32 i = start; i < end; i++)
-        bounds = bounds.Union(_objects[indices[i]].WorldBounds);
-
-    if (count == 1)
+    struct WorkItem
     {
-        BVHNode node;
-        node.Bounds      = bounds;
-        node.ObjectIndex = indices[start];
+        s32 start;
+        s32 end;
+        s32 nodeIndex;
+    };
 
-        _nodes.push_back(node);
-        return (s32)_nodes.size() - 1;
-    }
+    _nodes.emplace_back();
+    s32 rootIndex = 0;
 
-    AABB centroidBounds;
-    for (s32 i = start; i < end; i++)
+    std::vector<WorkItem> stack;
+    stack.reserve(64);
+    stack.push_back({ 0, (s32)indices.size(), rootIndex });
+
+    while (!stack.empty())
     {
-        Vector3 center = _objects[indices[i]].WorldBounds.Center();
-        centroidBounds = centroidBounds.Union(AABB(center, center));
-    }
+        WorkItem work = stack.back();
+        stack.pop_back();
 
-    SAHBucket buckets[3][SAHBucketCount];
+        s32 start = work.start;
+        s32 end   = work.end;
+        s32 count = end - start;
 
-    s32 bestAxis  = -1;
-    s32 bestSplit = -1;
-    f32 bestCost  = std::numeric_limits<f32>::max();
+        AABB bounds;
+        for (s32 i = start; i < end; i++)
+            bounds = bounds.Union(_objects[indices[i]].WorldBounds);
 
-    for (s32 axis = 0; axis < 3; axis++)
-    {
-        f32 axisMin   = GetAxisComponent(centroidBounds.Min, axis);
-        f32 axisMax   = GetAxisComponent(centroidBounds.Max, axis);
-        f32 axisRange = axisMax - axisMin;
-
-        if (axisRange <= 1e-6f)
+        if (count == 1)
+        {
+            BVHNode node;
+            node.Bounds      = bounds;
+            node.ObjectIndex = indices[start];
+            _nodes[work.nodeIndex] = node;
             continue;
+        }
 
-        f32 invAxisRange = (f32)SAHBucketCount / axisRange;
-
+        AABB centroidBounds;
         for (s32 i = start; i < end; i++)
         {
-            const AABB& objBounds = _objects[indices[i]].WorldBounds;
-            f32 center			  = GetAxisComponent(objBounds.Center(), axis);
-
-            SAHBucket& bucket = buckets[axis][ComputeBucketIndex(center, axisMin, invAxisRange)];
-            bucket.Count++;
-            bucket.Bounds = bucket.Bounds.Union(objBounds);
+            Vector3 center = _objects[indices[i]].WorldBounds.Center();
+            centroidBounds = centroidBounds.Union(AABB(center, center));
         }
 
-        AABB leftBounds[SAHBucketCount - 1];
-        s32  leftCount[SAHBucketCount - 1];
-        AABB accumBounds;
-        s32  accumCount = 0;
+        SAHBucket buckets[3][SAHBucketCount];
 
-        for (s32 i = 0; i < SAHBucketCount - 1; i++)
+        s32 bestAxis  = -1;
+        s32 bestSplit = -1;
+        f32 bestCost  = std::numeric_limits<f32>::max();
+
+        for (s32 axis = 0; axis < 3; axis++)
         {
-            accumBounds    = accumBounds.Union(buckets[axis][i].Bounds);
-            accumCount    += buckets[axis][i].Count;
-            leftBounds[i]  = accumBounds;
-            leftCount[i]   = accumCount;
-        }
+            f32 axisMin   = GetAxisComponent(centroidBounds.Min, axis);
+            f32 axisMax   = GetAxisComponent(centroidBounds.Max, axis);
+            f32 axisRange = axisMax - axisMin;
 
-        accumBounds = AABB();
-        accumCount  = 0;
-
-        for (s32 i = SAHBucketCount - 1; i > 0; i--)
-        {
-            accumBounds  = accumBounds.Union(buckets[axis][i].Bounds);
-            accumCount  += buckets[axis][i].Count;
-
-            s32 splitIndex = i - 1;
-            if (leftCount[splitIndex] == 0 || accumCount == 0)
+            if (axisRange <= 1e-6f)
                 continue;
 
-            f32 cost = TraversalCost
-                     + leftCount[splitIndex] * leftBounds[splitIndex].SurfaceArea()
-                     + accumCount * accumBounds.SurfaceArea();
+            f32 invAxisRange = (f32)SAHBucketCount / axisRange;
 
-            if (cost < bestCost)
+            for (s32 i = start; i < end; i++)
             {
-                bestCost  = cost;
-                bestAxis  = axis;
-                bestSplit = splitIndex;
+                const AABB& objBounds = _objects[indices[i]].WorldBounds;
+                f32 center            = GetAxisComponent(objBounds.Center(), axis);
+
+                SAHBucket& bucket = buckets[axis][ComputeBucketIndex(center, axisMin, invAxisRange)];
+                bucket.Count++;
+                bucket.Bounds = bucket.Bounds.Union(objBounds);
+            }
+
+            AABB leftBounds[SAHBucketCount - 1];
+            s32  leftCount[SAHBucketCount - 1];
+            AABB accumBounds;
+            s32  accumCount = 0;
+
+            for (s32 i = 0; i < SAHBucketCount - 1; i++)
+            {
+                accumBounds    = accumBounds.Union(buckets[axis][i].Bounds);
+                accumCount    += buckets[axis][i].Count;
+                leftBounds[i]  = accumBounds;
+                leftCount[i]   = accumCount;
+            }
+
+            accumBounds = AABB();
+            accumCount  = 0;
+
+            for (s32 i = SAHBucketCount - 1; i > 0; i--)
+            {
+                accumBounds  = accumBounds.Union(buckets[axis][i].Bounds);
+                accumCount  += buckets[axis][i].Count;
+
+                s32 splitIndex = i - 1;
+                if (leftCount[splitIndex] == 0 || accumCount == 0)
+                    continue;
+
+                f32 cost = TraversalCost
+                         + leftCount[splitIndex] * leftBounds[splitIndex].SurfaceArea()
+                         + accumCount * accumBounds.SurfaceArea();
+
+                if (cost < bestCost)
+                {
+                    bestCost  = cost;
+                    bestAxis  = axis;
+                    bestSplit = splitIndex;
+                }
             }
         }
-    }
 
-    s32 mid;
+        s32 mid;
 
-    if (bestAxis < 0)
-    {
-        mid = start + count / 2;
-    }
-    else
-    {
-        f32 axisMin      = GetAxisComponent(centroidBounds.Min, bestAxis);
-        f32 axisMax      = GetAxisComponent(centroidBounds.Max, bestAxis);
-        f32 invAxisRange = (f32)SAHBucketCount / (axisMax - axisMin);
-
-        auto middleIt = std::partition(indices.begin() + start, indices.begin() + end,
-            [this, bestAxis, axisMin, invAxisRange, bestSplit](s32 index)
-            {
-                f32 center = GetAxisComponent(_objects[index].WorldBounds.Center(), bestAxis);
-                return ComputeBucketIndex(center, axisMin, invAxisRange) <= bestSplit;
-            });
-
-        mid = (s32)(middleIt - indices.begin());
-
-        if (mid == start || mid == end)
+        if (bestAxis < 0)
+        {
             mid = start + count / 2;
+        }
+        else
+        {
+            f32 axisMin      = GetAxisComponent(centroidBounds.Min, bestAxis);
+            f32 axisMax      = GetAxisComponent(centroidBounds.Max, bestAxis);
+            f32 invAxisRange = (f32)SAHBucketCount / (axisMax - axisMin);
+
+            auto middleIt = std::partition(indices.begin() + start, indices.begin() + end,
+                [this, bestAxis, axisMin, invAxisRange, bestSplit](s32 index)
+                {
+                    f32 center = GetAxisComponent(_objects[index].WorldBounds.Center(), bestAxis);
+                    return ComputeBucketIndex(center, axisMin, invAxisRange) <= bestSplit;
+                });
+
+            mid = (s32)(middleIt - indices.begin());
+
+            if (mid == start || mid == end)
+                mid = start + count / 2;
+        }
+
+        s32 leftIndex = (s32)_nodes.size();
+        _nodes.emplace_back();
+        s32 rightIndex = (s32)_nodes.size();
+        _nodes.emplace_back();
+
+        BVHNode node;
+        node.Bounds = bounds;
+        node.Left   = leftIndex;
+        node.Right  = rightIndex;
+        _nodes[work.nodeIndex] = node;
+
+        stack.push_back({ mid, end, rightIndex });
+        stack.push_back({ start, mid, leftIndex });
     }
 
-    s32 leftIndex  = BuildRecursive(indices, start, mid);
-    s32 rightIndex = BuildRecursive(indices, mid, end);
-
-    BVHNode node;
-    node.Bounds = bounds;
-    node.Left   = leftIndex;
-    node.Right  = rightIndex;
-
-    _nodes.push_back(node);
-    return (s32)_nodes.size() - 1;
-}
-
-f32 BVH::ComputeSAHCost(s32 nodeIndex) const
-{
-    if (nodeIndex < 0)
-        return 0.0f;
-
-    const BVHNode& node = _nodes[nodeIndex];
-
-    if (node.IsLeaf())
-        return node.Bounds.SurfaceArea();
-
-    f32 leftCost  = ComputeSAHCost(node.Left);
-    f32 rightCost = ComputeSAHCost(node.Right);
-
-    return 1.0f + leftCost + rightCost;
+    return rootIndex;
 }
 
 
@@ -360,9 +370,9 @@ BVHMetrics BVH::ComputeMetrics() const
     if (_rootIndex < 0)
         return metrics;
     
-    s32 maxDepth = 0;
+    s32 maxDepth   = 0;
     s32 totalDepth = 0;
-    s32 nodeCount = 0;
+    s32 nodeCount  = 0;
     
     ComputeMetricsRecursive(_rootIndex, 0, maxDepth, totalDepth, nodeCount, metrics);
     
@@ -395,4 +405,20 @@ void BVH::ComputeMetricsRecursive(s32 nodeIndex, s32 depth, s32& maxDepth, s32& 
         ComputeMetricsRecursive(node.Left, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
         ComputeMetricsRecursive(node.Right, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
     }
+}
+
+f32 BVH::ComputeSAHCost(s32 nodeIndex) const
+{
+    if (nodeIndex < 0)
+        return 0.0f;
+
+    const BVHNode& node = _nodes[nodeIndex];
+
+    if (node.IsLeaf())
+        return node.Bounds.SurfaceArea();
+
+    f32 leftCost  = ComputeSAHCost(node.Left);
+    f32 rightCost = ComputeSAHCost(node.Right);
+
+    return 1.0f + leftCost + rightCost;
 }

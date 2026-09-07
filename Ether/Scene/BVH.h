@@ -41,7 +41,7 @@ public:
     BVHMetrics ComputeMetrics() const;
 
 private:
-    s32 BuildRecursive(std::vector<s32>& indices, s32 start, s32 end);
+    s32 BuildTree(std::vector<s32>& indices);
     void ComputeMetricsRecursive(s32 nodeIndex, s32 depth, s32& maxDepth, s32& totalDepth, s32& nodeCount, BVHMetrics& metrics) const;
     f32 ComputeSAHCost(s32 nodeIndex) const;
 

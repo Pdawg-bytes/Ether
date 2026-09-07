@@ -4,6 +4,8 @@
 #include <string>
 #include <vector>
 #include <cstdlib>
+#include <fstream>
+#include <memory>
 
 #ifdef __3DS__
     #include <3ds.h>
@@ -45,6 +47,18 @@ public:
             return "";
 
         return std::string(reinterpret_cast<const char*>(data.data()), data.size());
+    }
+
+    static std::unique_ptr<std::ifstream> OpenInputStream(const std::string& relativePath)
+    {
+        std::string fullPath = GetFullPath(relativePath);
+
+        auto stream = std::make_unique<std::ifstream>(fullPath, std::ios::in | std::ios::binary);
+
+        if (!stream->is_open())
+            return nullptr;
+
+        return stream;
     }
 
 private:

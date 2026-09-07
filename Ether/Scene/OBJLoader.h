@@ -10,6 +10,8 @@
 
 #include <vector>
 #include <string>
+#include <istream>
+#include <memory>
 #include <unordered_map>
 #include <sstream>
 #include <algorithm>
@@ -45,13 +47,13 @@ public:
                                                  const Quaternion& rotation = Quaternion::Identity,
                                                  const Vector3& scale = Vector3::One)
     {
-        std::string content = FileLoader::LoadFileAsString(relativeFilePath);
+        std::unique_ptr<std::istream> stream = FileLoader::OpenInputStream(relativeFilePath);
 
-        if (content.empty())
+        if (!stream || !*stream)
             return std::vector<SceneObject>();
 
         std::string directory = DirectoryOf(relativeFilePath);
-        return LoadFromString(content, directory, position, rotation, scale);
+        return LoadFromStream(*stream, directory, position, rotation, scale);
     }
 
 private:
@@ -70,7 +72,7 @@ private:
         std::string      MaterialName;
     };
 
-    static std::vector<SceneObject> LoadFromString(const std::string& content, const std::string& directory,
+    static std::vector<SceneObject> LoadFromStream(std::istream& stream, const std::string& directory,
                                                    const Vector3& position, const Quaternion& rotation, const Vector3& scale)
     {
         std::vector<Vector3> positions;
@@ -80,7 +82,6 @@ private:
         std::unordered_map<std::string, OBJMaterial> materials;
         std::string currentMaterial;
 
-        std::istringstream stream(content);
         std::string line;
 
         while (std::getline(stream, line))
@@ -152,7 +153,12 @@ private:
                 if (!materialFile.empty())
                 {
                     std::string materialPath = JoinPath(directory, materialFile);
-                    ParseMtl(FileLoader::LoadFileAsString(materialPath), DirectoryOf(materialPath), materials);
+
+                    std::unique_ptr<std::istream> mtlStream = FileLoader::OpenInputStream(materialPath);
+                    if (mtlStream && *mtlStream)
+                    {
+                        ParseMtl(*mtlStream, DirectoryOf(materialPath), materials);
+                    }
                 }
             }
         }
@@ -345,9 +351,8 @@ private:
         face.NormalIndices.push_back(ParseIndex(vertexStr.substr(pos2 + 1), normalCount));
     }
 
-    static void ParseMtl(const std::string& content, const std::string& directory, std::unordered_map<std::string, OBJMaterial>& materials)
+    static void ParseMtl(std::istream& stream, const std::string& directory, std::unordered_map<std::string, OBJMaterial>& materials)
     {
-        std::istringstream stream(content);
         std::string line;
         OBJMaterial currentMat;
         bool inMaterial = false;
@@ -464,5 +469,3 @@ private:
         return last;
     }
 };
-
-#undef std_stui
