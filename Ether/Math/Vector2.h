@@ -27,8 +27,8 @@ struct Vector2
     constexpr bool operator!=(const Vector2& other) const { return !(*this == other); }
 
     constexpr f32 Dot(const Vector2& other) const { return X * other.X + Y * other.Y; }
-    constexpr f32 LengthSquared() const { return Dot(*this); }
-    f32 Length() const { return std::sqrt(LengthSquared()); }
+    constexpr f32 LengthSquared() const           { return Dot(*this); }
+    f32 Length() const                            { return std::sqrt(LengthSquared()); }
 
     Vector2 Normalized() const
     {

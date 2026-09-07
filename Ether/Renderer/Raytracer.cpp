@@ -56,6 +56,7 @@ Raytracer::Raytracer(Camera& camera, const BVH& bvh, const Lighting& lighting, u
 Vector3 Raytracer::Trace(const Ray& ray, s32 depth) const
 {
     RayHit hit;
+
     if (!_bvh.Intersect(ray, hit, MinHitDistance, MaxTraceDistance))
         return BackgroundColor;
 
@@ -109,7 +110,7 @@ Vector3 Raytracer::Trace(const Ray& ray, s32 depth) const
     if (reflectMagnitude > MinBounceThroughput)
     {
         Vector3 reflectDir = ray.Direction - surface.Normal * (2.0f * ray.Direction.Dot(surface.Normal));
-        f32 normalBias = reflectDir.Dot(surface.Normal) >= 0.0f ? RefractRayBias : -RefractRayBias;
+        f32 normalBias     = reflectDir.Dot(surface.Normal) >= 0.0f ? RefractRayBias : -RefractRayBias;
 
         Ray reflectRay(hit.Point + surface.Normal * normalBias, reflectDir);
         result += Trace(reflectRay, depth + 1) * reflectance;

@@ -21,5 +21,5 @@ private:
     u32             _width;
     u32             _height;
 
-    static constexpr Vector3 BackgroundColor{ 0.05f, 0.05f, 0.08f };
+    static constexpr Vector3 BackgroundColor { 0.05f, 0.05f, 0.08f };
 };

@@ -5,7 +5,7 @@
 #include <cmath>
 #include <initializer_list>
 
-namespace SDF
+namespace Primitives
 {
     PrimitiveDefinition MakeSphere(f32 radius)
     {
@@ -452,10 +452,10 @@ namespace SDF
         f32 d2 = SeqmentDistSq(p, data.Triangle.V1, data.Triangle.V2);
         f32 d3 = SeqmentDistSq(p, data.Triangle.V2, data.Triangle.V0);
 
-        return std::sqrt(std::min({ d1, d2, d3 }));
+        return std::sqrt(std::min(std::min(d1, d2), d3));
     }
 
-    Vector3 TriangleNormal(const PrimitiveData& data, const Vector3& /*localPoint*/)
+    Vector3 TriangleNormal(const PrimitiveData& data, const Vector3& localPoint)
     {
         return data.Triangle.Normal;
     }

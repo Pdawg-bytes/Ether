@@ -22,8 +22,8 @@
 
 namespace
 {
-    constexpr u32 Width			  = 50;
-    constexpr u32 Height		  = 30;
+    constexpr u32 Width			  = 200;
+    constexpr u32 Height		  = 120;
     constexpr f32 MoveSpeed		  = 1.5f;
     constexpr f32 LookSensitivity = 0.15f;
 
@@ -82,7 +82,7 @@ namespace
     }
 
 
-    BVH BuildScene(const SceneMaterials& materials)
+    BVH BuildCSGScene(const SceneMaterials& materials)
     {
         std::shared_ptr<CSGTree> pillarTemplate = BuildPillarTemplate();
         std::shared_ptr<CSGTree> blobTemplate   = BuildBlobTemplate();
@@ -154,12 +154,15 @@ namespace
 
     BVH BuildOBJScene(const SceneMaterials& materials)
     {
-        std::vector<SceneObject> objects = OBJLoader::LoadFromFile("Teapot/teapot.obj");
-
-        objects.push_back(SceneObject::CreatePlane(Vector3::UnitY, 0.0f, materials.Checker));
+        std::vector<SceneObject> rootScene = OBJLoader::LoadFromFile(
+            "Monado/monado.obj",
+            Vector3(0.0f, 0.9f, 0.0f),
+            Quaternion::Identity,
+            Vector3::One
+        );
 
         BVH bvh;
-        bvh.Build(std::move(objects));
+        bvh.Build(std::move(rootScene));
         return bvh;
     }
     
@@ -167,7 +170,7 @@ namespace
     Lighting BuildLighting()
     {
         Lighting lighting;
-        lighting.AddLight(MakeDirectionalLight(Vector3(0.7, -1.0, 0.5), Vector3(1.0f, 0.95f, 0.85f), 1.0f));
+        lighting.AddLight(MakeDirectionalLight(Vector3(0.7, -1.0, 0.5), Vector3(1.0f, 0.89f, 0.71f), 5.0f));
         //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
         //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
         //lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));

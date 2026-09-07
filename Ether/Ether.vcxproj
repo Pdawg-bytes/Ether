@@ -185,10 +185,10 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="GlobalTypes.h" />
+    <ClInclude Include="Math\AABB.h" />
     <ClInclude Include="Math\Vector2.h" />
     <ClInclude Include="Math\Vector3.h" />
     <ClInclude Include="Math\Quaternion.h" />
-    <ClInclude Include="Math\AABB.h" />
     <ClInclude Include="Math\MathUtil.h" />
     <ClInclude Include="Math\Ray.h" />
     <ClInclude Include="Platform\FileLoader.h" />
@@ -201,6 +201,7 @@
     <ClInclude Include="Scene\Texture.h" />
     <ClInclude Include="Scene\Material.h" />
     <ClInclude Include="Scene\MaterialLibrary.h" />
+    <ClInclude Include="..\Vendor\stb_image.h" />
     <ClInclude Include="Renderer\Camera.h" />
     <ClInclude Include="Renderer\Raytracer.h" />
     <ClInclude Include="Renderer\Lighting.h" />

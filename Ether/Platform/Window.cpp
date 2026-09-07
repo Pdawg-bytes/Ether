@@ -12,7 +12,7 @@ namespace
 {
     void BuildPerspectiveMatrix(f32 fovYDegrees, f32 aspect, f32 nearPlane, f32 farPlane, f32 (&outMatrix)[16])
     {
-        f32 f = 1.0f / std::tan(Math::DegToRad(fovYDegrees) * 0.5f);
+        f32 f = 1.0f / std::tan(Math::ToRadians(fovYDegrees) * 0.5f);
 
         std::memset(outMatrix, 0, sizeof(outMatrix));
         outMatrix[0]  = f / aspect;

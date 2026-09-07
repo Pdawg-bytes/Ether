@@ -35,8 +35,8 @@ MaterialSample Material::Evaluate(const Vector3& worldPosition, const Vector3& n
     {
         uv.UV = uvCoordinates * TextureScale;
 
-        Vector3 up = (std::abs(normal.Y) < 0.999f) ? Vector3::UnitY : Vector3::UnitX;
-        uv.Tangent = normal.Cross(up).Normalized();
+        Vector3 up   = (std::abs(normal.Y) < 0.999f) ? Vector3::UnitY : Vector3::UnitX;
+        uv.Tangent   = normal.Cross(up).Normalized();
         uv.Bitangent = normal.Cross(uv.Tangent).Normalized();
     }
     else

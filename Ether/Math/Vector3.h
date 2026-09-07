@@ -38,7 +38,7 @@ struct Vector3
     }
 
     constexpr f32 LengthSquared() const { return Dot(*this); }
-    f32 Length() const { return std::sqrt(LengthSquared()); }
+    f32 Length() const                  { return std::sqrt(LengthSquared()); }
 
     Vector3 Normalized() const
     {

@@ -20,8 +20,8 @@ void Camera::UpdateViewport(u32 width, u32 height, f32 fov)
 
 void Camera::UpdateView()
 {
-    f32 yawRadians   = Math::DegToRad(Yaw);
-    f32 pitchRadians = Math::DegToRad(Pitch);
+    f32 yawRadians   = Math::ToRadians(Yaw);
+    f32 pitchRadians = Math::ToRadians(Pitch);
 
     Vector3 direction(
         std::cos(yawRadians) * std::cos(pitchRadians),
@@ -34,7 +34,7 @@ void Camera::UpdateView()
     Up      = Right.Cross(Forward);
 
     f32 aspectRatio = (f32)_width / (f32)_height;
-    f32 halfHeight  = std::tan(Math::DegToRad(_fov) * 0.5f);
+    f32 halfHeight  = std::tan(Math::ToRadians(_fov) * 0.5f);
     f32 halfWidth   = halfHeight * aspectRatio;
 
     f32 xStepScale = 2.0f * halfWidth  / _width;
@@ -65,7 +65,7 @@ bool Camera::ProjectPoint(const Vector3& worldPoint, f32& outNDCX, f32& outNDCY)
     if (zCam <= 0.0001f)
         return false;
 
-    f32 halfHeight = std::tan(Math::DegToRad(_fov) * 0.5f);
+    f32 halfHeight = std::tan(Math::ToRadians(_fov) * 0.5f);
     f32 halfWidth  = halfHeight * ((f32)_width / (f32)_height);
 
     outNDCX = xCam / (zCam * halfWidth);

@@ -4,6 +4,7 @@
 #include "../Math/Vector2.h"
 
 #include <memory>
+#include <string>
 #include <vector>
 
 class Texture
@@ -20,6 +21,7 @@ public:
     u32 Height() const { return _height; }
 
     static std::shared_ptr<Texture> CreateCheckerboard(u32 width, u32 height, u32 checkSize, const Vector3& colorA, const Vector3& colorB);
+    static std::shared_ptr<Texture> LoadFromFile(const std::string& relativeFilePath);
 
 private:
     u32 _width;

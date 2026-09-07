@@ -1,6 +1,12 @@
 #include "Texture.h"
 
+#include "../Platform/FileLoader.h"
+
+#define STB_IMAGE_IMPLEMENTATION
+#include "../../Vendor/stb_image.h"
+
 #include <cmath>
+#include <limits>
 
 Texture::Texture(u32 width, u32 height)
     : _width(width), _height(height), _pixels(width * height)
@@ -63,5 +69,40 @@ std::shared_ptr<Texture> Texture::CreateCheckerboard(u32 width, u32 height, u32 
         }
     }
 
+    return texture;
+}
+
+std::shared_ptr<Texture> Texture::LoadFromFile(const std::string& relativeFilePath)
+{
+    std::vector<u8> fileData = FileLoader::LoadFile(relativeFilePath);
+    if (fileData.empty() || fileData.size() > static_cast<size_t>((std::numeric_limits<int>::max)()))
+        return nullptr;
+
+    int width    = 0;
+    int height   = 0;
+    int channels = 0;
+
+    stbi_set_flip_vertically_on_load(1);
+    stbi_uc* pixels = stbi_load_from_memory(fileData.data(), static_cast<int>(fileData.size()), &width, &height, &channels, 4);
+    stbi_set_flip_vertically_on_load(0);
+
+    if (!pixels || width <= 0 || height <= 0)
+        return nullptr;
+
+    auto texture = std::make_shared<Texture>(static_cast<u32>(width), static_cast<u32>(height));
+    for (int y = 0; y < height; ++y)
+    {
+        for (int x = 0; x < width; ++x)
+        {
+            const stbi_uc* pixel = pixels + (y * width + x) * 4;
+            texture->SetPixel(static_cast<u32>(x), static_cast<u32>(y), Vector3(
+                pixel[0] / 255.0f,
+                pixel[1] / 255.0f,
+                pixel[2] / 255.0f)
+            );
+        }
+    }
+
+    stbi_image_free(pixels);
     return texture;
 }

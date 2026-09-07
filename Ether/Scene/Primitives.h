@@ -16,7 +16,7 @@ enum class PrimitiveType
     CSG
 };
 
-namespace SDF
+namespace Primitives
 {
     struct SphereData   { f32 Radius; };
     struct BoxData      { Vector3 Extents; };
@@ -38,12 +38,12 @@ namespace SDF
 
 union PrimitiveData
 {
-    SDF::SphereData   Sphere;
-    SDF::BoxData      Box;
-    SDF::PlaneData    Plane;
-    SDF::TorusData    Torus;
-    SDF::CylinderData Cylinder;
-    SDF::TriangleData Triangle;
+    Primitives::SphereData   Sphere;
+    Primitives::BoxData      Box;
+    Primitives::PlaneData    Plane;
+    Primitives::TorusData    Torus;
+    Primitives::CylinderData Cylinder;
+    Primitives::TriangleData Triangle;
 };
 
 using SDFDistanceFunc  = f32(*)(const PrimitiveData& data, const Vector3& localPoint);
@@ -60,7 +60,7 @@ struct PrimitiveDefinition
     AABB             LocalBounds;
 };
 
-namespace SDF
+namespace Primitives
 {
     PrimitiveDefinition MakeSphere(f32 radius);
     PrimitiveDefinition MakeBox(const Vector3& extents);

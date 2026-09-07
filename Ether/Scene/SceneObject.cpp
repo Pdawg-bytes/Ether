@@ -195,27 +195,27 @@ SceneObject SceneObject::CreatePrimitive(const PrimitiveDefinition& definition, 
 
 SceneObject SceneObject::CreateSphere(const Vector3& position, f32 radius, const Vector3& scale, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeSphere(radius), position, Quaternion::Identity, scale, materialIndex);
+    return CreatePrimitive(Primitives::MakeSphere(radius), position, Quaternion::Identity, scale, materialIndex);
 }
 
 SceneObject SceneObject::CreateBox(const Vector3& position, const Quaternion& rotation, const Vector3& extents, const Vector3& scale, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeBox(extents), position, rotation, scale, materialIndex);
+    return CreatePrimitive(Primitives::MakeBox(extents), position, rotation, scale, materialIndex);
 }
 
 SceneObject SceneObject::CreateTorus(const Vector3& position, const Quaternion& rotation, f32 majorRadius, f32 minorRadius, f32 scale, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeTorus(majorRadius, minorRadius), position, rotation, Vector3(scale), materialIndex);
+    return CreatePrimitive(Primitives::MakeTorus(majorRadius, minorRadius), position, rotation, Vector3(scale), materialIndex);
 }
 
 SceneObject SceneObject::CreateCylinder(const Vector3& position, const Quaternion& rotation, f32 radius, f32 halfHeight, f32 scale, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeCylinder(radius, halfHeight), position, rotation, Vector3(scale), materialIndex);
+    return CreatePrimitive(Primitives::MakeCylinder(radius, halfHeight), position, rotation, Vector3(scale), materialIndex);
 }
 
 SceneObject SceneObject::CreatePlane(const Vector3& normal, f32 distance, s32 materialIndex)
 {
-    PrimitiveDefinition def = SDF::MakePlane(normal, distance);
+    PrimitiveDefinition def = Primitives::MakePlane(normal, distance);
 
     SceneObject object;
     object.Position	     = Vector3::Zero;
@@ -232,13 +232,13 @@ SceneObject SceneObject::CreatePlane(const Vector3& normal, f32 distance, s32 ma
 
 SceneObject SceneObject::CreateTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeTriangle(v0, v1, v2), Vector3::Zero, Quaternion::Identity, Vector3::One, materialIndex);
+    return CreatePrimitive(Primitives::MakeTriangle(v0, v1, v2), Vector3::Zero, Quaternion::Identity, Vector3::One, materialIndex);
 }
 
 SceneObject SceneObject::CreateTriangle(const Vector3& v0, const Vector3& v1, const Vector3& v2,
                                         const Vector2& uv0, const Vector2& uv1, const Vector2& uv2, s32 materialIndex)
 {
-    return CreatePrimitive(SDF::MakeTriangle(v0, v1, v2, uv0, uv1, uv2, true),
+    return CreatePrimitive(Primitives::MakeTriangle(v0, v1, v2, uv0, uv1, uv2, true),
                            Vector3::Zero, Quaternion::Identity, Vector3::One, materialIndex);
 }
 
