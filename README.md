@@ -49,3 +49,7 @@ In order to use `.obj` files, you must place them inside of a folder named `Data
 
 ### OBJ Scene on Nintendo 3DS
 <img width="2880" height="2160" alt="image" src="https://github.com/user-attachments/assets/45103125-674a-48ca-be16-655ce858f13e" />
+
+### BVH Visualization
+<img width="1591" height="986" alt="image" src="https://github.com/user-attachments/assets/10900da7-0747-4919-aa88-039d8dbd8bbc" />
+
