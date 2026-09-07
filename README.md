@@ -41,6 +41,12 @@ In order to use `.obj` files, you must place them inside of a folder named `Data
 ### Cornell Box
 <img width="1597" height="984" alt="image" src="https://github.com/user-attachments/assets/d4a91045-f746-4af3-bdae-015b034bb773" />
 
+### Large Object (>320k polygons)
+<img width="1277" height="991" alt="image" src="https://github.com/user-attachments/assets/02d0acc4-d646-45a6-9231-c2b6cd5724a4" />
+
+### Texture Mapping
+<img width="736" height="281" alt="image" src="https://github.com/user-attachments/assets/b8b00b0f-75e3-4d47-956d-eaee598cddb7" />
+
 ### CSG Scene
 <img width="1595" height="987" alt="image" src="https://github.com/user-attachments/assets/c7a8dc8b-1681-4d98-a036-a1526012670f" />
 
