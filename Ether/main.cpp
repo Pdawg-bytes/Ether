@@ -22,9 +22,9 @@
 
 namespace
 {
-    constexpr u32 Width			  = 200;
+    constexpr u32 Width	           = 200;
     constexpr u32 Height          = 120;
-    constexpr f32 MoveSpeed		  = 1.5f;
+    constexpr f32 MoveSpeed       = 1.5f;
     constexpr f32 LookSensitivity = 0.15f;
 
     using SceneMaterials = MaterialFactory::BuiltInMaterials;
