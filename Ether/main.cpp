@@ -23,7 +23,7 @@
 namespace
 {
     constexpr u32 Width			  = 200;
-    constexpr u32 Height		  = 120;
+    constexpr u32 Height          = 120;
     constexpr f32 MoveSpeed		  = 1.5f;
     constexpr f32 LookSensitivity = 0.15f;
 
@@ -258,7 +258,7 @@ int main()
         if (movement != Vector3::Zero)
         {
             camera.Position += movement.Normalized() * speed;
-            cameraChanged = true;
+            cameraChanged    = true;
         }
 
         if (cameraChanged)
@@ -279,7 +279,7 @@ int main()
             std::string title = "Ether | FPS: " + std::to_string((s32)fps);
             runtime.SetTitle(title.c_str());
 
-            frameCount	    = 0;
+            frameCount      = 0;
             timeAccumulator = 0.0;
         }
     }
