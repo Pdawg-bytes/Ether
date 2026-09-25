@@ -45,7 +45,7 @@ In order to use `.obj` files, you must place them inside of a folder named `Data
 <img width="1277" height="991" alt="image" src="https://github.com/user-attachments/assets/02d0acc4-d646-45a6-9231-c2b6cd5724a4" />
 
 ### Sponza (>260k polygons)
-<img width="1598" height="958" alt="image" src="https://github.com/user-attachments/assets/793f8588-577d-4b8f-8e4b-f62bbdbde3dc" />
+<img width="1597" height="958" alt="image" src="https://github.com/user-attachments/assets/db6e737e-2cc4-4c98-a1ee-a9922bffafdd" />
 
 ### Texture Mapping
 <img width="736" height="281" alt="image" src="https://github.com/user-attachments/assets/b8b00b0f-75e3-4d47-956d-eaee598cddb7" />
