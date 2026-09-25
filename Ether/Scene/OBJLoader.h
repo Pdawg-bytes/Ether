@@ -27,6 +27,7 @@ struct OBJMaterial
     Vector3 Emission = Vector3::Zero;
     f32 IOR          = 1.5f;
     f32 Transmission = 0.0f;
+    f32 BumpStrength = 1.0f;
 
     std::string AlbedoMap;
     std::string RoughnessMap;
@@ -180,6 +181,7 @@ private:
             mat.Emission     = objMat.Emission;
             mat.IOR          = objMat.IOR;
             mat.Transmission = objMat.Transmission;
+            mat.BumpStrength = objMat.BumpStrength;
             mat.AlbedoMap    = LoadTexture(objMat.AlbedoMap);
             mat.RoughnessMap = LoadTexture(objMat.RoughnessMap);
             mat.EmissionMap  = LoadTexture(objMat.EmissionMap);
@@ -438,9 +440,22 @@ private:
             }
             else if (command == "bump" || command == "map_Bump" || command == "map_bump")
             {
-                std::getline(iss, currentMat.BumpMap);
-                Trim(currentMat.BumpMap);
-                currentMat.BumpMap = JoinPath(directory, LastToken(currentMat.BumpMap));
+                std::string token;
+                std::string bumpPath;
+
+                while (iss >> token)
+                {
+                    if (token == "-bm")
+                        iss >> currentMat.BumpStrength;
+                    else
+                        bumpPath = token;
+                }
+
+                if (!bumpPath.empty())
+                {
+                    Trim(currentMat.BumpMap);
+                    currentMat.BumpMap = JoinPath(directory, LastToken(bumpPath));
+                }
             }
         }
 

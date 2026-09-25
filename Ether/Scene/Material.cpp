@@ -25,7 +25,7 @@ namespace
 
 MaterialSample Material::Evaluate(const Vector3& worldPosition, const Vector3& normal, const Vector2& uvCoordinates, bool hasUV) const
 {
-    MaterialSample sample{ Albedo, Roughness, Metallic, Emission, normal, IOR, Transmission };
+    MaterialSample sample { Albedo, Roughness, Metallic, Emission, normal, IOR, Transmission };
 
     if (!AlbedoMap && !RoughnessMap && !EmissionMap && !BumpMap)
         return sample;
@@ -50,11 +50,16 @@ MaterialSample Material::Evaluate(const Vector3& worldPosition, const Vector3& n
 
     if (BumpMap)
     {
-        constexpr f32 Epsilon = 0.01f;
-        auto s = [&](const Vector2& coordinates){ return BumpMap->SampleScalar(coordinates); };
+        f32 du = 1.0f / static_cast<f32>(BumpMap->Width());
+        f32 dv = 1.0f / static_cast<f32>(BumpMap->Height());
 
-        f32 dHdu = (s(uv.UV + Vector2(Epsilon, 0.0f)) - s(uv.UV - Vector2(Epsilon, 0.0f))) / (2.0f * Epsilon);
-        f32 dHdv = (s(uv.UV + Vector2(0.0f, Epsilon)) - s(uv.UV - Vector2(0.0f, Epsilon))) / (2.0f * Epsilon);
+        f32 hL = BumpMap->SampleScalar(uv.UV - Vector2(du, 0.0f));
+        f32 hR = BumpMap->SampleScalar(uv.UV + Vector2(du, 0.0f));
+        f32 hB = BumpMap->SampleScalar(uv.UV - Vector2(0.0f, dv));
+        f32 hT = BumpMap->SampleScalar(uv.UV + Vector2(0.0f, dv));
+
+        f32 dHdu = (hR - hL) * 0.5f;
+        f32 dHdv = (hT - hB) * 0.5f;
 
         Vector3 tangent   = (uv.Tangent   - normal * normal.Dot(uv.Tangent)).Normalized();
         Vector3 bitangent = (uv.Bitangent - normal * normal.Dot(uv.Bitangent)).Normalized();

@@ -12,7 +12,7 @@ namespace
     constexpr u32 ScreenWidth     = 400;
     constexpr u32 ScreenHeight    = 240;
     constexpr u32 BytesPerPixel   = 3;
-    constexpr s16 CircleDeadZone  = 10;
+    constexpr s16 CircleDeadZone  = 40;
     constexpr f32 CircleLookScale = 0.3f;
 
     struct CitrusRuntime
@@ -114,14 +114,15 @@ namespace Platform
         u32 button = 0;
         switch (key)
         {
-            case Key::Forward:    button = KEY_UP;    break;
-            case Key::Backward:   button = KEY_DOWN;  break;
-            case Key::Left:       button = KEY_LEFT;  break;
-            case Key::Right:      button = KEY_RIGHT; break;
-            case Key::Up:         button = KEY_X;     break;
-            case Key::Down:       button = KEY_B;     break;
-            case Key::Boost:      button = KEY_R;     break;
-            case Key::ToggleBVH:  button = KEY_Y;     break;
+            case Key::Forward:     button = KEY_UP;    break;
+            case Key::Backward:    button = KEY_DOWN;  break;
+            case Key::Left:        button = KEY_LEFT;  break;
+            case Key::Right:       button = KEY_RIGHT; break;
+            case Key::Up:          button = KEY_X;     break;
+            case Key::Down:        button = KEY_B;     break;
+            case Key::Boost:       button = KEY_R;     break;
+            case Key::ToggleBVH:   button = KEY_Y;     break;
+            case Key::GetLocation: button = KEY_A;     break;
         }
 
         const bool dpadKey = key == Key::Forward || key == Key::Backward || key == Key::Left || key == Key::Right;

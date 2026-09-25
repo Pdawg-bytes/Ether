@@ -48,14 +48,15 @@ namespace Platform
         WindowsRuntime* runtime = static_cast<WindowsRuntime*>(_implementation);
         switch (key)
         {
-            case Key::Forward:    return runtime->window.IsKeyDown('W');
-            case Key::Backward:   return runtime->window.IsKeyDown('S');
-            case Key::Left:       return runtime->window.IsKeyDown('A');
-            case Key::Right:      return runtime->window.IsKeyDown('D');
-            case Key::Up:         return runtime->window.IsKeyDown(VK_SPACE);
-            case Key::Down:       return runtime->window.IsKeyDown(VK_SHIFT);
-            case Key::Boost:      return runtime->window.IsKeyDown(VK_CONTROL);
-            case Key::ToggleBVH:  return runtime->window.IsKeyDown('B');
+            case Key::Forward:     return runtime->window.IsKeyDown('W');
+            case Key::Backward:    return runtime->window.IsKeyDown('S');
+            case Key::Left:        return runtime->window.IsKeyDown('A');
+            case Key::Right:       return runtime->window.IsKeyDown('D');
+            case Key::Up:          return runtime->window.IsKeyDown(VK_SPACE);
+            case Key::Down:        return runtime->window.IsKeyDown(VK_SHIFT);
+            case Key::Boost:       return runtime->window.IsKeyDown(VK_CONTROL);
+            case Key::ToggleBVH:   return runtime->window.IsKeyDown('B');
+            case Key::GetLocation: return runtime->window.IsKeyDown('L');
         }
         return false;
     }

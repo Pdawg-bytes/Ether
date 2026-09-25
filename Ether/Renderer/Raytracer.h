@@ -4,7 +4,7 @@
 #include "Lighting.h"
 #include "../Scene/BVH.h"
 
-//#define MULTI_THREADED_RENDERING
+#define MULTI_THREADED_RENDERING
 
 class Raytracer
 {
@@ -21,5 +21,5 @@ private:
     u32             _width;
     u32             _height;
 
-    static constexpr Vector3 BackgroundColor { 0.05f, 0.05f, 0.08f };
+    static constexpr Vector3 BackgroundColor { 0.67f, 0.86f, 0.99f };
 };

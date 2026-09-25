@@ -66,7 +66,7 @@ Vector3 Raytracer::Trace(const Ray& ray, s32 depth) const
     MaterialSample surface    = material.Evaluate(hit.Point, hit.Normal, hit.UV, hit.HasUV);
 
     Vector3 viewDir = -ray.Direction;
-    SurfacePoint surfacePoint{ hit.Point, surface.Normal, surface.Albedo, surface.Roughness, surface.Metallic, surface.Emission };
+    SurfacePoint surfacePoint { hit.Point, surface.Normal, surface.Albedo, surface.Roughness, surface.Metallic, surface.Emission };
     Vector3 shaded = _lighting.Shade(_bvh, surfacePoint, viewDir);
 
     Vector3 f0          = Vector3(0.04f) * (1.0f - surface.Metallic) + surface.Albedo * surface.Metallic;

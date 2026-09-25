@@ -177,15 +177,42 @@ namespace
         bvh.Build(std::move(rootScene));
         return bvh;
     }
+
+    BVH BuildSponzaScene(const SceneMaterials& materials)
+    {
+        std::vector<SceneObject> rootScene = OBJLoader::LoadFromFile(
+            "Sponza/sponza.obj",
+            Vector3::Zero,
+            Quaternion::Identity,
+            Vector3(0.01f)
+        );
+
+        BVH bvh;
+        bvh.Build(std::move(rootScene));
+        return bvh;
+    }
     
 
     Lighting BuildLighting()
     {
         Lighting lighting;
-        lighting.AddLight(MakeDirectionalLight(Vector3(0.7, -1.0, 0.5), Vector3(1.0f, 0.89f, 0.71f), 5.0f));
+        // Sponza & OBJ Scene
+        lighting.AddLight(MakeDirectionalLight(Vector3(0.8f, -0.95f, 0.22f), Vector3(1.0f, 0.89f, 0.71f), 5.0f));
+
+        // Sponza
+        //lighting.AddLight(MakePointLight(Vector3( 11.25f, 1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        //lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        //lighting.AddLight(MakePointLight(Vector3( 11.2f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        //lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        //lighting.AddLight(MakePointLight(Vector3(-12.5f,  6.4f, -0.3f), Vector3(1.0, 0.62, 0.20), 2.0f));
+
+        // CSG Scene
         //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
         //lighting.AddLight(MakePointLight(Vector3(-4.0f, 3.0f, 3.0f), Vector3(0.4f, 0.6f, 1.0f), 25.0f, 10.0f));
+        
+        // Cornell Box
         //lighting.AddLight(MakePointLight(Vector3(0.0f, 2.98f, 2.2f), Vector3(1.0f, 0.95f, 0.85f), 10.0f, 1.0f));
+
         return lighting;
     }
 }
@@ -226,9 +253,13 @@ int main()
     bool showBVH   = false;
     bool prevBDown = false;
 
+    bool prevLocationDown = false;
+
     auto lastTime		= std::chrono::steady_clock::now();
     s32 frameCount	    = 0;
     f64 timeAccumulator = 0.0;
+
+    char coordinateBuffer[128];
 
     while (runtime.PollEvents())
     {
@@ -263,6 +294,28 @@ int main()
 
         if (cameraChanged)
             camera.UpdateView();
+
+        bool locationDown = runtime.IsKeyDown(Platform::Key::GetLocation);
+        if (locationDown && !prevLocationDown)
+        {
+            runtime.Log("Location:");
+
+            snprintf(coordinateBuffer, sizeof(coordinateBuffer), 
+                     "  Coordinates: %.2f, %.2f, %.2f", 
+                     camera.Position.X, 
+                     camera.Position.Y, 
+                     camera.Position.Z
+            );
+            runtime.Log(coordinateBuffer);
+
+            snprintf(coordinateBuffer, sizeof(coordinateBuffer),
+                "  Facing: Yaw: %.2f, Pitch: %.2f\n",
+                camera.Yaw,
+                camera.Pitch
+            );
+            runtime.Log(coordinateBuffer);
+        }
+        prevLocationDown = locationDown;
 
         bool bDown = runtime.IsKeyDown(Platform::Key::ToggleBVH);
         if (bDown && !prevBDown) showBVH = !showBVH;

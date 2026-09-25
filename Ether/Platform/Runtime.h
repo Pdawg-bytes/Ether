@@ -17,6 +17,7 @@ namespace Platform
         Down,
         Boost,
         ToggleBVH,
+        GetLocation,
     };
 
     class Runtime
