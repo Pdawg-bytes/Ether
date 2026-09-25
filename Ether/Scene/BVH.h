@@ -7,10 +7,10 @@ struct BVHNode
 {
     AABB Bounds;
     s32  Left        = -1;
-    s32  Right       = -1;
     s32  ObjectIndex = -1;
 
     bool IsLeaf() const { return ObjectIndex >= 0; }
+    s32  Right()  const { return Left + 1; }
 };
 
 struct BVHMetrics
@@ -30,6 +30,7 @@ public:
     void Build(std::vector<SceneObject> objects);
 
     bool Intersect(const Ray& ray, RayHit& hit, f32 minT = 0.0001f, f32 maxT = 1e30f) const;
+    bool IntersectAny(const Ray& ray, f32 minT = 0.0001f, f32 maxT = 1e30f) const;
     f32 Distance(const Vector3& worldPoint, s32& hitObjectIndex) const;
 
     const SceneObject& GetObject(s32 index) const { return _objects[index]; }
@@ -46,7 +47,7 @@ private:
     f32 ComputeSAHCost(s32 nodeIndex) const;
 
     std::vector<SceneObject> _objects;
-    std::vector<s32> _unboundedIndices;
-    std::vector<BVHNode> _nodes;
+    std::vector<s32>         _unboundedIndices;
+    std::vector<BVHNode>     _nodes;
     s32 _rootIndex = -1;
 };

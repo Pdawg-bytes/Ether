@@ -200,11 +200,11 @@ namespace
         lighting.AddLight(MakeDirectionalLight(Vector3(0.8f, -0.95f, 0.22f), Vector3(1.0f, 0.89f, 0.71f), 5.0f));
 
         // Sponza
-        //lighting.AddLight(MakePointLight(Vector3( 11.25f, 1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
-        //lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
-        //lighting.AddLight(MakePointLight(Vector3( 11.2f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
-        //lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
-        //lighting.AddLight(MakePointLight(Vector3(-12.5f,  6.4f, -0.3f), Vector3(1.0, 0.62, 0.20), 2.0f));
+        lighting.AddLight(MakePointLight(Vector3( 11.25f, 1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f,  4.0f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        lighting.AddLight(MakePointLight(Vector3( 11.2f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(-12.0f,  1.8f, -4.5f), Vector3(1.0, 0.62, 0.20), 10.0f));
+        lighting.AddLight(MakePointLight(Vector3(-12.5f,  6.4f, -0.3f), Vector3(1.0, 0.62, 0.20), 2.0f));
 
         // CSG Scene
         //lighting.AddLight(MakePointLight(Vector3(3.0f, 4.5f, -2.0f), Vector3(1.0f, 0.95f, 0.85f), 40.0f, 20.0f));
@@ -224,7 +224,7 @@ int main()
     Camera camera(Vector3(0.0f, 1.0f, -2.0f), Width, Height);
 
     SceneMaterials materials = MaterialFactory::RegisterBuiltInMaterials();
-    BVH bvh				     = BuildOBJScene(materials);
+    BVH bvh				     = BuildSponzaScene(materials);
     Lighting lighting		 = BuildLighting();
 
     {

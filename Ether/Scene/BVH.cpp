@@ -198,7 +198,6 @@ s32 BVH::BuildTree(std::vector<s32>& indices)
         BVHNode node;
         node.Bounds = bounds;
         node.Left   = leftIndex;
-        node.Right  = rightIndex;
         _nodes[work.nodeIndex] = node;
 
         stack.push_back({ mid, end, rightIndex });
@@ -212,7 +211,7 @@ s32 BVH::BuildTree(std::vector<s32>& indices)
 bool BVH::Intersect(const Ray& ray, RayHit& hit, f32 minT, f32 maxT) const
 {
     hit.Distance = maxT;
-    bool hasHit = false;
+    bool hasHit  = false;
 
     for (s32 unboundedIndex : _unboundedIndices)
     {
@@ -228,20 +227,26 @@ bool BVH::Intersect(const Ray& ray, RayHit& hit, f32 minT, f32 maxT) const
     if (_rootIndex < 0)
         return hasHit;
 
-    s32 stack[64];
+    const Vector3 invDir(1.0f / ray.Direction.X, 1.0f / ray.Direction.Y, 1.0f / ray.Direction.Z);
+
+    f32 rootT0, rootT1;
+    if (!_nodes[_rootIndex].Bounds.Intersect(ray.Origin, invDir, minT, hit.Distance, rootT0, rootT1))
+        return hasHit;
+
+    struct StackEntry { s32 index; f32 t0; };
+    StackEntry stack[64];
+
     s32 stackSize      = 0;
-    stack[stackSize++] = _rootIndex;
+    stack[stackSize++] = { _rootIndex, rootT0 };
 
     while (stackSize > 0)
     {
-        const BVHNode& node = _nodes[stack[--stackSize]];
+        StackEntry entry = stack[--stackSize];
 
-        f32 boxT0, boxT1;
-        if (!node.Bounds.Intersect(ray, minT, hit.Distance, boxT0, boxT1))
+        if (entry.t0 >= hit.Distance)
             continue;
 
-        if (boxT0 >= hit.Distance)
-            continue;
+        const BVHNode& node = _nodes[entry.index];
 
         if (node.IsLeaf())
         {
@@ -256,37 +261,85 @@ bool BVH::Intersect(const Ray& ray, RayHit& hit, f32 minT, f32 maxT) const
         else
         {
             const BVHNode& left  = _nodes[node.Left];
-            const BVHNode& right = _nodes[node.Right];
+            const BVHNode& right = _nodes[node.Right()];
 
             f32 leftT0, leftT1, rightT0, rightT1;
-            bool hitLeft  = left.Bounds.Intersect(ray, minT, hit.Distance, leftT0, leftT1);
-            bool hitRight = right.Bounds.Intersect(ray, minT, hit.Distance, rightT0, rightT1);
+            bool hitLeft  = left.Bounds.Intersect(ray.Origin, invDir, minT, hit.Distance, leftT0, leftT1);
+            bool hitRight = right.Bounds.Intersect(ray.Origin, invDir, minT, hit.Distance, rightT0, rightT1);
 
             if (hitLeft && hitRight)
             {
                 if (leftT0 < rightT0)
                 {
-                    stack[stackSize++] = node.Right;
-                    stack[stackSize++] = node.Left;
+                    stack[stackSize++] = { node.Right(), rightT0 };
+                    stack[stackSize++] = { node.Left,    leftT0 };
                 }
                 else
                 {
-                    stack[stackSize++] = node.Left;
-                    stack[stackSize++] = node.Right;
+                    stack[stackSize++] = { node.Left,    leftT0 };
+                    stack[stackSize++] = { node.Right(), rightT0 };
                 }
             }
             else if (hitLeft)
             {
-                stack[stackSize++] = node.Left;
+                stack[stackSize++] = { node.Left, leftT0 };
             }
             else if (hitRight)
             {
-                stack[stackSize++] = node.Right;
+                stack[stackSize++] = { node.Right(), rightT0 };
             }
         }
     }
 
     return hasHit;
+}
+
+bool BVH::IntersectAny(const Ray& ray, f32 minT, f32 maxT) const
+{
+    for (s32 unboundedIndex : _unboundedIndices)
+    {
+        RayHit candidateHit;
+        candidateHit.Distance = maxT;
+        if (_objects[unboundedIndex].Intersect(ray, candidateHit, minT, maxT))
+            return true;
+    }
+
+    if (_rootIndex < 0)
+        return false;
+
+    const Vector3 invDir(1.0f / ray.Direction.X, 1.0f / ray.Direction.Y, 1.0f / ray.Direction.Z);
+
+    f32 rootT0, rootT1;
+    if (!_nodes[_rootIndex].Bounds.Intersect(ray.Origin, invDir, minT, maxT, rootT0, rootT1))
+        return false;
+
+    s32 stack[64];
+    s32 stackSize      = 0;
+    stack[stackSize++] = _rootIndex;
+
+    while (stackSize > 0)
+    {
+        const BVHNode& node = _nodes[stack[--stackSize]];
+
+        f32 boxT0, boxT1;
+        if (!node.Bounds.Intersect(ray.Origin, invDir, minT, maxT, boxT0, boxT1))
+            continue;
+
+        if (node.IsLeaf())
+        {
+            RayHit candidateHit;
+            candidateHit.Distance = maxT;
+            if (_objects[node.ObjectIndex].Intersect(ray, candidateHit, minT, maxT))
+                return true;
+        }
+        else
+        {
+            stack[stackSize++] = node.Left;
+            stack[stackSize++] = node.Right();
+        }
+    }
+
+    return false;
 }
 
 f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
@@ -309,16 +362,20 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
     if (_rootIndex < 0)
         return bestDistance;
 
-    s32 stack[64];
+    struct StackEntry { s32 index; f32 distSq; };
+    StackEntry stack[64];
+
     s32 stackSize      = 0;
-    stack[stackSize++] = _rootIndex;
+    stack[stackSize++] = { _rootIndex, _nodes[_rootIndex].Bounds.DistanceSquared(worldPoint) };
 
     while (stackSize > 0)
     {
-        const BVHNode& node = _nodes[stack[--stackSize]];
+        StackEntry entry = stack[--stackSize];
 
-        if (node.Bounds.DistanceSquared(worldPoint) > bestDistanceSq)
+        if (entry.distSq > bestDistanceSq)
             continue;
+
+        const BVHNode& node = _nodes[entry.index];
 
         if (node.IsLeaf())
         {
@@ -341,20 +398,20 @@ f32 BVH::Distance(const Vector3& worldPoint, s32& hitObjectIndex) const
         else
         {
             const BVHNode& left  = _nodes[node.Left];
-            const BVHNode& right = _nodes[node.Right];
+            const BVHNode& right = _nodes[node.Right()];
 
             f32 leftDistSq  = left.Bounds.DistanceSquared(worldPoint);
             f32 rightDistSq = right.Bounds.DistanceSquared(worldPoint);
 
             if (leftDistSq < rightDistSq)
             {
-                stack[stackSize++] = node.Right;
-                stack[stackSize++] = node.Left;
+                stack[stackSize++] = { node.Right(), rightDistSq };
+                stack[stackSize++] = { node.Left,    leftDistSq };
             }
             else
             {
-                stack[stackSize++] = node.Left;
-                stack[stackSize++] = node.Right;
+                stack[stackSize++] = { node.Left,    leftDistSq };
+                stack[stackSize++] = { node.Right(), rightDistSq };
             }
         }
     }
@@ -403,7 +460,7 @@ void BVH::ComputeMetricsRecursive(s32 nodeIndex, s32 depth, s32& maxDepth, s32& 
     {
         metrics.InternalNodeCount++;
         ComputeMetricsRecursive(node.Left, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
-        ComputeMetricsRecursive(node.Right, depth + 1, maxDepth, totalDepth, nodeCount, metrics);
+        ComputeMetricsRecursive(node.Right(), depth + 1, maxDepth, totalDepth, nodeCount, metrics);
     }
 }
 
@@ -418,7 +475,7 @@ f32 BVH::ComputeSAHCost(s32 nodeIndex) const
         return node.Bounds.SurfaceArea();
 
     f32 leftCost  = ComputeSAHCost(node.Left);
-    f32 rightCost = ComputeSAHCost(node.Right);
+    f32 rightCost = ComputeSAHCost(node.Right());
 
     return 1.0f + leftCost + rightCost;
 }

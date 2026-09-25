@@ -52,7 +52,7 @@ struct SceneObject
 
     static std::vector<SceneObject> CreateQuad(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector3& v3, s32 materialIndex = -1);
     static std::vector<SceneObject> CreateQuad(const Vector3& v0, const Vector3& v1, const Vector3& v2, const Vector3& v3,
-                                              const Vector2& uv0, const Vector2& uv1, const Vector2& uv2, const Vector2& uv3, s32 materialIndex = -1);
+                                               const Vector2& uv0, const Vector2& uv1, const Vector2& uv2, const Vector2& uv3, s32 materialIndex = -1);
 
     static SceneObject CreateFromTemplate(std::shared_ptr<CSGTree> tmpl, const Vector3& position, const Quaternion& rotation = Quaternion::Identity, const Vector3& scale = Vector3(1.0f), s32 materialIndex = -1);
 
